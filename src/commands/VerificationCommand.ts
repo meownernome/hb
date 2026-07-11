@@ -1,8 +1,8 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionsBitField } from 'discord.js';
+import { MessageFlags,  SlashCommandBuilder, ChatInputCommandInteraction, PermissionsBitField } from 'discord.js';
 
 export class VerificationCommand {
   public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ flags: 4194304 });
+    await interaction.deferReply({ ephemeral: true });
 
     const minecraftUsername = await this.getMinecraftUsernameFromUser(interaction.user.id);
     if (!minecraftUsername) {
@@ -14,7 +14,7 @@ export class VerificationCommand {
 
     const verifiedRole = interaction.guild?.roles.cache.find(role => role.name === 'Verified');
     if (verifiedRole && interaction.member) {
-      await interaction.member.roles.add(verifiedRole);
+      await (interaction.member as any).roles.add(verifiedRole);
       await interaction.editReply({
         content: '✅ You have been verified!'
       });

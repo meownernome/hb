@@ -44,7 +44,7 @@ export class EventHandler {
     const commandName = interaction.commandName;
     logger.info(`Command executed: ${commandName} by ${interaction.user.tag}`);
 
-    const command = this.client.commands.get(commandName);
+    const command = (this.client as any).commands.get(commandName);
     if (command) {
       try {
         await command.execute(interaction);

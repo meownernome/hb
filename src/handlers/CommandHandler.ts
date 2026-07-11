@@ -15,11 +15,21 @@ export class CommandHandler {
     for (const file of commandFiles) {
       try {
         const commandModule = await import(`./commands/${file}`);
-        const command = commandModule.default || commandModule;
 
-        if (command?.command?.name) {
-          this.client.commands.set(command.command.name, command);
-          console.log(`Loaded command: ${command.command.name}`);
+        for (const Exported of Object.values(commandModule)) {
+          if (typeof Exported !== 'function') continue;
+
+          try {
+            const instance = new (Exported as new () => any)();
+            const cmd = instance?.command;
+
+            if (cmd && cmd.name && !this.client.commands.has(cmd.name)) {
+              this.client.commands.set(cmd.name, instance);
+              console.log(`Loaded command: ${cmd.name}`);
+            }
+          } catch (err) {
+            console.error(`Failed to instantiate command from ${file}:`, err);
+          }
         }
       } catch (error) {
         console.error(`Failed to load command ${file}:`, error);
@@ -32,7 +42,11 @@ export class CommandHandler {
   private async getCommandFiles(): Promise<string[]> {
     const dir = join(__dirname, 'commands');
     let files = await readdir(dir);
-    return files.filter(file => file.endsWith('.ts') || file === 'index.ts' || file === 'Commands.ts');
+    return files.filter(file =>
+      (file.endsWith('.js') || file.endsWith('.ts')) &&
+      !file.endsWith('.d.ts') &&
+      !file.endsWith('.map')
+    );
   }
 
   private async registerCommands(): Promise<void> {

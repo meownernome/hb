@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { MessageFlags,  SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 
 export class ProfileCommand {
   public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -28,10 +28,7 @@ export class ProfileCommand {
     profileContent += `\n**Tests Completed:** ${tierHistory.length}\n`;
     profileContent += `**Member Since:** ${new Date(interaction.user.createdTimestamp).toLocaleDateString()}\n`;
 
-    await interaction.reply({
-      content: profileContent,
-      flags: 4194304
-    });
+    await interaction.reply({ content: profileContent, ephemeral: true });
   }
 
   private async getMinecraftUsernameFromUser(discordUserId: string): Promise<string | null> {

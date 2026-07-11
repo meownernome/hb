@@ -134,7 +134,7 @@ export class ServerSetup {
   }
 
   private async setupRoleHierarchy(): Promise<void> {
-    const botRole = this.guild.me?.roles.highest;
+    const botRole = this.guild.members.me?.roles.highest;
     if (!botRole) return;
 
     const sortedRoles = this.guild.roles.cache
@@ -233,7 +233,7 @@ export class ServerSetup {
       return;
     }
 
-    const existing = categoryChannel.children.cache.find(child => child.name === channelName);
+    const existing = (categoryChannel as CategoryChannel).children.cache.find(child => child.name === channelName);
     if (existing) {
       return;
     }
@@ -248,7 +248,7 @@ export class ServerSetup {
       channelData.topic = `Automated channel created for ${channelName}`;
     }
 
-    await categoryChannel.children.create(channelData);
+    await (categoryChannel as CategoryChannel).children.create(channelData);
     logger.info(`Created channel: ${channelName} in ${category}`);
   }
 
@@ -381,5 +381,43 @@ export class ServerSetup {
     });
 
     logger.info(`Leaderboards setup for guild: ${this.guild.id}`);
+  }
+
+  public async cleanup(guild?: Guild): Promise<void> {
+    const targetGuild = guild || this.guild;
+    const categoryNames = [
+      'information', 'verification', 'tier testing', 'community', 'support',
+      'leaderboards', 'applications', 'staff', 'logs', 'voice'
+    ];
+
+    for (const name of categoryNames) {
+      const category = targetGuild.channels.cache.find(
+        channel => channel.type === ChannelType.GuildCategory && channel.name === name
+      ) as CategoryChannel | undefined;
+
+      if (!category) continue;
+
+      for (const child of category.children.cache.values()) {
+        await child.delete().catch(() => undefined);
+      }
+      await category.delete().catch(() => undefined);
+    }
+
+    const tierRolePattern = /^(.*)\s(LT|HT)\d+$/;
+    const staffRoles = [
+      'Founder', 'Co-Founder', 'Lead Developer', 'Developer', 'Network Manager',
+      'Head Administrator', 'Administrator', 'Senior Moderator', 'Moderator',
+      'Trial Moderator', 'Head Tier Tester', 'Senior Tier Tester', 'Tier Tester',
+      'Trial Tier Tester', 'Support Team', 'Builder', 'Media Team', 'Verified', 'Member', 'Muted', 'Bot'
+    ];
+
+    for (const role of targetGuild.roles.cache.values()) {
+      if (role.name === '@everyone') continue;
+      if (tierRolePattern.test(role.name) || staffRoles.includes(role.name)) {
+        await role.delete().catch(() => undefined);
+      }
+    }
+
+    logger.info(`Server cleanup completed for guild: ${targetGuild.id}`);
   }
 }

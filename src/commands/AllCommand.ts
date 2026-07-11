@@ -1,23 +1,16 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags } from 'discord.js';
 import { ServerSetup } from '../ServerSetup';
 
 export class AllCommand {
-  constructor(private serverSetup: ServerSetup) {}
-
   public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     await interaction.deferReply();
 
     try {
-      await this.serverSetup.setupAll();
-      await interaction.editReply({
-        content: '✅ Server setup completed successfully!',
-        flags: 4194304
-      });
+      const serverSetup = new ServerSetup(interaction.client, interaction.guild);
+      await serverSetup.setupAll();
+      await interaction.editReply({ content: '✅ Server setup completed successfully!' });
     } catch (error) {
-      await interaction.editReply({
-        content: '❌ Server setup failed. Please check the logs.',
-        flags: 4194304
-      });
+      await interaction.editReply({ content: '❌ Server setup failed. Please check the logs.' });
     }
   }
 

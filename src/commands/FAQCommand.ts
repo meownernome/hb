@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
+import { MessageFlags,  SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 
 export class FAQCommand {
   public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -34,10 +34,7 @@ export class FAQCommand {
       faqContent += `**${faq.question}**\n${faq.answer}\n\n`;
     }
 
-    await interaction.reply({
-      content: faqContent,
-      flags: 4194304
-    });
+    await interaction.reply({ content: faqContent, ephemeral: true });
   }
 
   public get command() {

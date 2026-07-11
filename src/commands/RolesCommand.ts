@@ -1,9 +1,6 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
-import { ServerSetup } from '../ServerSetup';
+import { MessageFlags,  SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 
 export class RolesCommand {
-  constructor(private serverSetup: ServerSetup) {}
-
   public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     const roles = interaction.guild?.roles.cache
       .filter(role => role.name !== '@everyone' && !role.name.startsWith('@'))
@@ -14,10 +11,7 @@ export class RolesCommand {
       rolesList += `${role.name} (Position: ${role.position})\n`;
     }
 
-    await interaction.reply({
-      content: rolesList,
-      flags: 4194304
-    });
+    await interaction.reply({ content: rolesList, ephemeral: true });
   }
 
   public get command() {

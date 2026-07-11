@@ -1,9 +1,8 @@
+import { MessageFlags, SlashCommandBuilder } from 'discord.js';
 import { logger } from '../utils/Logger';
 import { ServerSetup } from '../ServerSetup';
 
 export class CleanupCommand {
-  constructor(private serverSetup: ServerSetup) {}
-
   public async execute(interaction: any): Promise<void> {
     if (interaction.user.id !== process.env.BOT_OWNER_ID) {
       await interaction.reply({ content: '❌ Only the bot owner can use this command.', ephemeral: true });
@@ -21,7 +20,8 @@ export class CleanupCommand {
     collector?.on('collect', async (response) => {
       if (response.content.toLowerCase() === 'yes') {
         await interaction.editReply({ content: '🔄 Cleaning up server...' });
-        await this.serverSetup.cleanup(interaction.guild!);
+        const serverSetup = new ServerSetup(interaction.client, interaction.guild);
+        await serverSetup.cleanup(interaction.guild!);
         await interaction.editReply({ content: '✅ Cleanup completed successfully!' });
       } else {
         await interaction.editReply({ content: '❌ Cleanup cancelled.' });

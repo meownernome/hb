@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
+import { MessageFlags,  SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 
 export class LeaderboardCommand {
   public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -16,10 +16,7 @@ export class LeaderboardCommand {
       .setFooter({ text: 'Leaderboards are updated regularly' })
       .setTimestamp();
 
-    await interaction.reply({
-      content: embed.toString(),
-      flags: 4194304
-    });
+    await interaction.reply({ content: embed.toString(), ephemeral: true });
   }
 
   public get command() {

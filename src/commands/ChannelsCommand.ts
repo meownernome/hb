@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ChatInputCommandInteraction, ChannelType } from 'discord.js';
+import { MessageFlags, TextChannel, SlashCommandBuilder, ChatInputCommandInteraction, ChannelType } from 'discord.js';
 
 export class ChannelsCommand {
   public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -7,7 +7,7 @@ export class ChannelsCommand {
       .sort((a, b) => {
         if (a.parentId === null && b.parentId !== null) return -1;
         if (a.parentId !== null && b.parentId === null) return 1;
-        return a.position - b.position;
+        return (a as TextChannel).position - (b as TextChannel).position;
       });
 
     let channelsList = 'Server channels:\n';
@@ -20,10 +20,7 @@ export class ChannelsCommand {
       channelsList += `• ${channel.name} (${channel.type})\n`;
     }
 
-    await interaction.reply({
-      content: channelsList,
-      flags: 4194304
-    });
+    await interaction.reply({ content: channelsList, ephemeral: true });
   }
 
   public get command() {
