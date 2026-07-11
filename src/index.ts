@@ -42,11 +42,30 @@ export class HARVAL {
     try {
       this.commandHandler.loadCommands();
 
+      this.client.on('interactionCreate', async (interaction) => {
+        if (!interaction.isChatInputCommand()) return;
+
+        const command = this.commandHandler.commands.get(interaction.commandName);
+        if (!command) return;
+
+        try {
+          await command.execute(interaction);
+        } catch (error) {
+          logger.error(error instanceof Error ? error : new Error(String(error)));
+          const reply = { content: 'An error occurred while executing this command.', ephemeral: true };
+          if (interaction.replied || interaction.deferred) {
+            await interaction.followUp(reply).catch(() => undefined);
+          } else {
+            await interaction.reply(reply).catch(() => undefined);
+          }
+        }
+      });
+
       await this.client.login(process.env.DISCORD_TOKEN);
 
       logger.info(`Logged in as ${this.client.user?.tag}`);
 
-      this.client.once('ready', async () => {
+      this.client.once('ready' as any, async () => {
         await this.commandHandler.registerCommands();
         logger.info(`Serving ${this.client.guilds.cache.size} guilds`);
       });
