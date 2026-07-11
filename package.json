@@ -1,0 +1,48 @@
+{
+  "name": "harval-mc",
+  "version": "1.0.0",
+  "description": "A professional Discord bot for HARVAL MC - PvP Tier Testing Network",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node --files --watch -x src/index.ts",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write src",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "discord",
+    "bot",
+    "minecraft",
+    "pvp",
+    "tier",
+    "testing",
+    "harvalmc"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dayjs": "^1.11.11",
+    "discord.js": "^14.14.1",
+    "dotenv": "^16.4.5",
+    "fluent-ffmpeg": "^2.1.2",
+    "json2csv": "^6.0.0-alpha.2",
+    "mongoose": "^8.5.1",
+    "node-fetch": "^3.3.2",
+    "winston": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/json2csv": "^5.0.1",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.3.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}
