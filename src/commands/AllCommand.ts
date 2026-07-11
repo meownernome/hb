@@ -1,5 +1,3 @@
-use strict;
-
 import { SlashCommandBuilder, ChatInputCommandInteraction } from 'discord.js';
 import { ServerSetup } from '../ServerSetup';
 

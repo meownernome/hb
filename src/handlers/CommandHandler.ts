@@ -1,5 +1,3 @@
-use strict;
-
 import { join } from 'path';
 import { readdir } from 'fs/promises';
 

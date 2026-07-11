@@ -1,5 +1,3 @@
-use strict;
-
 import { Client, GatewayIntentBits, Partials, Events } from 'discord.js';
 import { CommandHandler } from './handlers/CommandHandler';
 import dotenv from 'dotenv';

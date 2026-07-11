@@ -1,7 +1,3 @@
-use strict;
-
-import { logger } from './Logger';
-
 export class Logger {
   public info(message: string, ...args: any[]): void {
     console.log(`[${new Date().toISOString()}] INFO: ${this.formatMessage(message, args)}`);

@@ -1,5 +1,3 @@
-use strict;
-
 import { Client, Events } from 'discord.js';
 import { logger } from '../utils/Logger';
 

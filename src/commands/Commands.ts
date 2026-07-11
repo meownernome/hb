@@ -1,5 +1,3 @@
-use strict;
-
 import { SlashCommandBuilder, ChatInputCommandInteraction, ChannelType } from 'discord.js';
 
 export class VerificationCommand {

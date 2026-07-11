@@ -342,7 +342,8 @@ export class ServerSetup {
       faqContent += `Answer for ${question}.\n\n`;
     }
 
-    await Bun.write(faqFilePath, faqContent);
+    const fs = await import('fs/promises');
+    await fs.writeFile(faqFilePath, faqContent);
     logger.info(`Generated FAQ for guild: ${this.guild.id}`);
   }
 
@@ -355,7 +356,8 @@ export class ServerSetup {
       rulesContent += `**Rule ${i}:** Please be respectful and follow the code of conduct.\n\n`;
     }
 
-    await Bun.write(rulesFilePath, rulesContent);
+    const fs = await import('fs/promises');
+    await fs.writeFile(rulesFilePath, rulesContent);
     logger.info(`Generated rules for guild: ${this.guild.id}`);
   }
 

@@ -1,5 +1,3 @@
-use strict;
-
 import { ServerSetup } from './ServerSetup';
 import { MongoModel } from './database/MongoModel';
 

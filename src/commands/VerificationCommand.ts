@@ -1,5 +1,3 @@
-use strict;
-
 import { SlashCommandBuilder, ChatInputCommandInteraction, PermissionsBitField } from 'discord.js';
 
 export class VerificationCommand {

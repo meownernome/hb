@@ -1,6 +1,4 @@
-"use strict";
-
-import { ServerSetup } from '../ServerSetup';
+import { ServerSetup } from './ServerSetup';
 
 export class ServerSetupManager {
   private static instance: ServerSetupManager;
@@ -28,6 +26,5 @@ export class ServerSetupManager {
 export class ServerSetupCleanup {
   public async cleanup(guild: any): Promise<void> {
     console.log(`Cleaning up server: ${guild.name} (${guild.id})`);
-    // Implementation of cleanup logic
   }
 }

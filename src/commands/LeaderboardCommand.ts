@@ -1,5 +1,3 @@
-use strict;
-
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 
 export class LeaderboardCommand {
