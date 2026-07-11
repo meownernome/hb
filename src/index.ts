@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Partials, Events } from 'discord.js';
+import { Client, GatewayIntentBits, Partials } from 'discord.js';
 import { CommandHandler } from './handlers/CommandHandler';
 import dotenv from 'dotenv';
 import { logger } from './utils/Logger';
@@ -40,12 +40,16 @@ export class HARVAL {
 
   private async initialize(): Promise<void> {
     try {
+      this.commandHandler.loadCommands();
+
       await this.client.login(process.env.DISCORD_TOKEN);
 
       logger.info(`Logged in as ${this.client.user?.tag}`);
 
-      await this.commandHandler.loadCommands();
-      logger.info(`Serving ${this.client.guilds.cache.size} guilds`);
+      this.client.once('ready', async () => {
+        await this.commandHandler.registerCommands();
+        logger.info(`Serving ${this.client.guilds.cache.size} guilds`);
+      });
     } catch (error) {
       logger.error(error instanceof Error ? error : new Error(String(error)));
       process.exit(1);
