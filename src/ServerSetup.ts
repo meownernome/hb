@@ -1,5 +1,3 @@
-"use strict";
-
 import { TextChannel, VoiceChannel, CategoryChannel, Role, Guild, PermissionsBitField, ChannelType, Collection } from 'discord.js';
 import { logger } from './utils/Logger';
 import { MongoModel } from './database';

@@ -1,5 +1,3 @@
-"use strict";
-
 import mongoose from 'mongoose';
 
 const verificationLogSchema = new mongoose.Schema({
