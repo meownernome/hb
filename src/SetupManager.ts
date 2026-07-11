@@ -1,6 +1,7 @@
 import { ServerSetup } from './ServerSetup';
 import { MongoModel } from './database/MongoModel';
 
+
 export class ServerSetupManager {
   private static instance: ServerSetupManager;
   private serverSetup: ServerSetup | null = null;
