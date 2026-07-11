@@ -40,12 +40,12 @@ export class HARVAL {
 
   private async initialize(): Promise<void> {
     try {
-      await this.commandHandler.loadCommands();
-
-      logger.info('HARVAL bot initialized successfully');
-      logger.info(`Serving ${this.client.guilds.cache.size} guilds`);
-
       await this.client.login(process.env.DISCORD_TOKEN);
+
+      logger.info(`Logged in as ${this.client.user?.tag}`);
+
+      await this.commandHandler.loadCommands();
+      logger.info(`Serving ${this.client.guilds.cache.size} guilds`);
     } catch (error) {
       logger.error(error instanceof Error ? error : new Error(String(error)));
       process.exit(1);
