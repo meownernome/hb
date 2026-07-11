@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Partials } from 'discord.js';
+import { Client, GatewayIntentBits, Partials, Events } from 'discord.js';
 import { CommandHandler } from './handlers/CommandHandler';
 import dotenv from 'dotenv';
 import { logger } from './utils/Logger';
@@ -65,7 +65,7 @@ export class HARVAL {
 
       logger.info(`Logged in as ${this.client.user?.tag}`);
 
-      this.client.once('ready' as any, async () => {
+      this.client.once(Events.ClientReady, async () => {
         await this.commandHandler.registerCommands();
         logger.info(`Serving ${this.client.guilds.cache.size} guilds`);
       });
