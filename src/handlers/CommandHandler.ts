@@ -8,6 +8,7 @@ export class CommandHandler {
 
   constructor(client: any) {
     this.client = client;
+    this.client.commands = new Map();
   }
 
   public async loadCommands(): Promise<void> {
@@ -32,8 +33,8 @@ export class CommandHandler {
 
   private async getCommandFiles(): Promise<string[]> {
     const dir = join(__dirname, 'commands');
-    const files = await readdir(dir);
-    return files.filter(file => file.endsWith('.ts'));
+    let files = await readdir(dir);
+    return files.filter(file => file.endsWith('.ts') || file === 'index.ts' || file === 'Commands.ts');
   }
 
   private async registerCommands(): Promise<void> {

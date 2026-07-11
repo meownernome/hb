@@ -26,24 +26,19 @@ export class EventHandler {
 
   private async handleGuildCreate(guild: any): Promise<void> {
     logger.info(`Joined guild: ${guild.name} (ID: ${guild.id})`);
-    await this.logGuildJoin(guild);
   }
 
   private async handleGuildDelete(guild: any): Promise<void> {
     logger.info(`Left guild: ${guild.name} (ID: ${guild.id})`);
-    await this.logGuildLeave(guild);
   }
 
   private async handleMemberAdd(member: any): Promise<void> {
     logger.info(`Member joined: ${member.user.tag} in guild: ${member.guild.name}`);
-    await this.logMemberJoin(member);
   }
 
   private async handleInteractionCreate(interaction: any): Promise<void> {
     if (interaction.isCommand()) {
       await this.handleCommand(interaction);
-    } else if (interaction.isButton()) {
-      await this.handleButton(interaction);
     }
   }
 
@@ -66,30 +61,9 @@ export class EventHandler {
     }
   }
 
-  private async handleButton(interaction: any): Promise<void> {
-    const customId = interaction.customId;
-    logger.info(`Button clicked: ${customId} by ${interaction.user.tag}`);
-  }
-
   private async handleMessageCreate(message: any): Promise<void> {
     if (message.author.bot) return;
     logger.info(`Message: ${message.content} by ${message.author.tag}`);
-  }
-
-  private async logGuildJoin(guild: any): Promise<void> {
-    logger.info(`Guild join log: ${guild.name} (${guild.id})`);
-  }
-
-  private async logGuildLeave(guild: any): Promise<void> {
-    logger.info(`Guild leave log: ${guild.name} (${guild.id})`);
-  }
-
-  private async logMemberJoin(member: any): Promise<void> {
-    logger.info(`Member join log: ${member.user.tag} in ${member.guild.name}`);
-  }
-
-  private async logMemberLeave(member: any): Promise<void> {
-    logger.info(`Member leave log: ${member.user.tag} in ${member.guild.name}`);
   }
 
   public async loadEvents(): Promise<void> {

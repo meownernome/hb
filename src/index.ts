@@ -2,7 +2,6 @@ use strict;
 
 import { Client, GatewayIntentBits, Partials, Events } from 'discord.js';
 import { CommandHandler } from './handlers/CommandHandler';
-import { EventHandler } from './handlers/EventHandler';
 import dotenv from 'dotenv';
 import { logger } from './utils/Logger';
 import './database';
@@ -12,7 +11,6 @@ dotenv.config();
 export class HARVAL {
   public readonly client: Client;
   public readonly commandHandler: CommandHandler;
-  public readonly eventHandler: EventHandler;
 
   constructor() {
     this.client = new Client({
@@ -38,14 +36,12 @@ export class HARVAL {
     });
 
     this.commandHandler = new CommandHandler(this.client);
-    this.eventHandler = new EventHandler(this.client);
 
     this.initialize();
   }
 
   private async initialize(): Promise<void> {
     try {
-      await this.eventHandler.loadEvents();
       await this.commandHandler.loadCommands();
 
       logger.info('HARVAL bot initialized successfully');
