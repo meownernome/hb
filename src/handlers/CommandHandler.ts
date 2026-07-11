@@ -3,9 +3,11 @@ import { readdir } from 'fs/promises';
 
 export class CommandHandler {
   private readonly client: any;
+  private readonly commandsDir: string;
 
   constructor(client: any) {
     this.client = client;
+    this.commandsDir = join(__dirname, '..', 'commands');
     this.client.commands = new Map();
   }
 
@@ -14,7 +16,7 @@ export class CommandHandler {
 
     for (const file of commandFiles) {
       try {
-        const commandModule = await import(`./commands/${file}`);
+        const commandModule = await import(join(this.commandsDir, file));
 
         for (const Exported of Object.values(commandModule)) {
           if (typeof Exported !== 'function') continue;
@@ -40,10 +42,9 @@ export class CommandHandler {
   }
 
   private async getCommandFiles(): Promise<string[]> {
-    const dir = join(__dirname, '..', 'commands');
-    let files = await readdir(dir);
+    let files = await readdir(this.commandsDir);
     return files.filter(file =>
-      (file.endsWith('.js') || file.endsWith('.ts')) &&
+      file.endsWith('.js') &&
       !file.endsWith('.d.ts') &&
       !file.endsWith('.map')
     );
