@@ -17,7 +17,12 @@ export class Logger {
   }
 
   private formatMessage(message: string, args: any[]): string {
-    return args.length > 0 ? message.replace(/\{(\d+)\}/g, (_, index) => String(args[parseInt(index)]) || '') : message;
+    if (args.length === 0) return message;
+    if (message.includes('{0}')) {
+      return message.replace(/\{(\d+)\}/g, (_, index) => String(args[parseInt(index)]) || '');
+    }
+    const parts = args.map(a => (a instanceof Error ? `${a.message}\n${a.stack}` : String(a)));
+    return `${message} ${parts.join(' ')}`;
   }
 }
 

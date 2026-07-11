@@ -43,10 +43,11 @@ export class HARVAL {
       await this.commandHandler.loadCommands();
 
       logger.info('HARVAL bot initialized successfully');
-      logger.info(`Logged in as ${this.client.user?.tag}`);
       logger.info(`Serving ${this.client.guilds.cache.size} guilds`);
+
+      await this.client.login(process.env.DISCORD_TOKEN);
     } catch (error) {
-      logger.error('Failed to initialize HARVAL bot:', error);
+      logger.error(error instanceof Error ? error : new Error(String(error)));
       process.exit(1);
     }
   }

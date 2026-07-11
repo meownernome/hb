@@ -40,7 +40,7 @@ export class CommandHandler {
   }
 
   private async getCommandFiles(): Promise<string[]> {
-    const dir = join(__dirname, 'commands');
+    const dir = join(__dirname, '..', 'commands');
     let files = await readdir(dir);
     return files.filter(file =>
       (file.endsWith('.js') || file.endsWith('.ts')) &&
