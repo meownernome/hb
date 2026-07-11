@@ -4,8 +4,8 @@ import { ServerSetup } from '../ServerSetup';
 
 export class CleanupCommand {
   public async execute(interaction: any): Promise<void> {
-    if (interaction.user.id !== process.env.BOT_OWNER_ID) {
-      await interaction.reply({ content: '❌ Only the bot owner can use this command.', ephemeral: true });
+    if (interaction.user.id !== interaction.guild?.ownerId) {
+      await interaction.reply({ content: '❌ Only the server owner can use this command.', ephemeral: true });
       return;
     }
 
