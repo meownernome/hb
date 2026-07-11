@@ -1,5 +1,4 @@
-import { MessageFlags, SlashCommandBuilder } from 'discord.js';
-import { logger } from '../utils/Logger';
+import { SlashCommandBuilder } from 'discord.js';
 import { ServerSetup } from '../ServerSetup';
 
 export class CleanupCommand {
@@ -9,30 +8,20 @@ export class CleanupCommand {
       return;
     }
 
-    const confirmMessage = await interaction.reply({
-      content: '⚠️ Are you sure? Type `yes` to confirm or `no` to cancel cleanup. This cannot be undone.',
-      fetchReply: true
-    });
+    await interaction.deferReply();
 
-    const filter = (m: any) => m.author.id === interaction.user.id && (m.content.toLowerCase() === 'yes' || m.content.toLowerCase() === 'no');
-    const collector = interaction.channel?.createMessageCollector({ filter, max: 1, time: 30000 });
+    const serverSetup = new ServerSetup(interaction.client, interaction.guild);
+    const result = await serverSetup.cleanup(interaction.guild);
 
-    collector?.on('collect', async (response) => {
-      if (response.content.toLowerCase() === 'yes') {
-        await interaction.editReply({ content: '🔄 Cleaning up server...' });
-        const serverSetup = new ServerSetup(interaction.client, interaction.guild);
-        await serverSetup.cleanup(interaction.guild!);
-        await interaction.editReply({ content: '✅ Cleanup completed successfully!' });
-      } else {
-        await interaction.editReply({ content: '❌ Cleanup cancelled.' });
-      }
+    await interaction.editReply({
+      content: `✅ Cleanup complete!\n\n🗑️ Deleted **${result.channels}** channels\n🗑️ Deleted **${result.roles}** roles\n\nAll channels and roles have been removed.`
     });
   }
 
   public get command() {
     return new SlashCommandBuilder()
       .setName('cleanup')
-      .setDescription('Remove all HARVAL-created channels and roles')
+      .setDescription('Nuclear: delete ALL channels and ALL roles')
       .setDMPermission(false);
   }
 }
