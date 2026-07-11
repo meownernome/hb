@@ -30,7 +30,7 @@
     "axios": "^1.7.2",
     "winston": "^3.13.0",
     "node-fetch": "^3.3.2",
-    "json2csv": "^6.0.0",
+    "json2csv": "^5.0.0",
     "fluent-ffmpeg": "^2.1.2",
     "dayjs": "^1.11.11"
   },
