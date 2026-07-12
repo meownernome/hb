@@ -149,20 +149,54 @@ export class ServerSetup {
 
   private async createRole(name: string, color?: number): Promise<void> {
     if (this.guild.roles.cache.some(r => r.name === name)) { logger.info(`  ⏭️ ${name} exists`); return; }
-    try {
-      await this.guild.roles.create({ name });
-      logger.info(`  🎨 ${name}`);
-      await this.sleep(500);
-      return;
-    } catch (e2: any) {
-      const msg = e2?.message || e2?.code || String(e2);
-      if (e2?.code === 50013 || msg.includes('Missing Permissions') || msg.includes('Missing Access') || msg.includes('Forbidden')) {
-        logger.error(`  ❌ Bot CANNOT create roles — Manage Roles permission missing. Re-invite the bot.`);
-        throw new Error('NO_PERMISSION');
+
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 20000);
+
+        const res = await fetch(`https://discord.com/api/v10/guilds/${this.guild.id}/roles`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bot ${this.guild.client.token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name }),
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          if (res.status === 429) {
+            const wait = (body?.retry_after || 5) * 1000;
+            logger.warn(`  ⏳ ${name} — rate limited, waiting ${(wait / 1000).toFixed(1)}s`);
+            await this.sleep(wait);
+            continue;
+          }
+          if (res.status === 403 || body?.code === 50013) {
+            logger.error(`  ❌ Bot CANNOT create roles — Manage Roles missing. Re-invite the bot.`);
+            throw new Error('NO_PERMISSION');
+          }
+          throw new Error(body?.message || `HTTP ${res.status}`);
+        }
+
+        const roleData = await res.json();
+        (this.guild.roles as any)._add({ ...roleData, id: roleData.id, guild_id: this.guild.id });
+        logger.info(`  🎨 ${name}`);
+        await this.sleep(1200);
+        return;
+      } catch (e: any) {
+        if (e?.name === 'AbortError') {
+          logger.warn(`  ⏳ ${name} — Discord API timed out (20s)`);
+          return;
+        }
+        if (e?.message === 'NO_PERMISSION') throw e;
+        logger.error(`  ❌ ${name}: ${e?.message || e}`);
+        return;
       }
-      logger.error(`  ❌ ${name}: ${msg}`);
-      await this.sleep(500);
     }
+    logger.warn(`  ⏳ ${name} — gave up after 3 attempts`);
   }
 
   private async handleRateLimit(e: any, context: string): Promise<void> {
