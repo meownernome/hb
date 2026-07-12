@@ -1,5 +1,6 @@
-import { Guild, ChannelType, TextChannel, CategoryChannel, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, PermissionFlagsBits } from 'discord.js';
+import { Guild, ChannelType, TextChannel, CategoryChannel, EmbedBuilder, PermissionFlagsBits } from 'discord.js';
 import { logger } from './utils/Logger';
+import { ALL_ROLES } from './roles';
 
 const CATEGORIES: { key: string; name: string }[] = [
   { key: 'information', name: '══════════ INFORMATION ══════════' },
@@ -13,13 +14,6 @@ const CATEGORIES: { key: string; name: string }[] = [
   { key: 'voice', name: '══════════ VOICE ══════════' },
 ];
 
-const MODES = [
-  'Sword', 'Crystal', 'SMP', 'Netherite Pot', 'Diamond Pot', 'UHC', 'BuildUHC',
-  'NoDebuff', 'Combo', 'Gapple', 'OP Duel', 'Boxing', 'Axe', 'Mace',
-  'Anchor', 'Cart PvP', 'Bedwars', 'Skywars', 'Bridge', 'Nodebuff', 'Vanilla',
-  'Crossbow', 'Trident', 'Shield', 'Elytra Combat', 'Custom Duel',
-];
-
 const MODE_EMOJI: Record<string, string> = {
   'Sword': '⚔️', 'Crystal': '💎', 'SMP': '🛡️', 'Netherite Pot': '🌋', 'Diamond Pot': '💠',
   'UHC': '❤️', 'BuildUHC': '🏗️', 'NoDebuff': '🚫', 'Combo': '🥊', 'Gapple': '🍎',
@@ -28,23 +22,6 @@ const MODE_EMOJI: Record<string, string> = {
   'Vanilla': '🌿', 'Crossbow': '🏹', 'Trident': '🔱', 'Shield': '🛡️', 'Elytra Combat': '🦅',
   'Custom Duel': '🎯',
 };
-
-const TIERS: { name: string; color: number }[] = [
-  { name: 'LT 1', color: 0x7F8C8D }, { name: 'HT 1', color: 0x95A5A6 },
-  { name: 'LT 2', color: 0x27AE60 }, { name: 'HT 2', color: 0x2ECC71 },
-  { name: 'LT 3', color: 0x2980B9 }, { name: 'HT 3', color: 0x3498DB },
-  { name: 'LT 4', color: 0x8E44AD }, { name: 'HT 4', color: 0x9B59B6 },
-  { name: 'LT 5', color: 0xD4AC0D }, { name: 'HT 5', color: 0xF1C40F },
-];
-
-const STAFF_ROLES = [
-  '👑 ━━ Founder', '👑 ━━ Co-Founder', '⚡ ━━ Lead Developer', '⚡ ━━ Developer',
-  '🌐 ━━ Network Manager', '🛡️ ━━ Head Administrator', '🛡️ ━━ Administrator',
-  '🔰 ━━ Senior Moderator', '🔰 ━━ Moderator', '🔰 ━━ Trial Moderator',
-  '⚔️ ━━ Head Tier Tester', '⚔️ ━━ Senior Tier Tester', '⚔️ ━━ Tier Tester',
-  '⚔️ ━━ Trial Tier Tester', '💎 ━━ Support Team', '🔨 ━━ Builder',
-  '🎬 ━━ Media Team', '✅ ━━ Verified', '👤 ━━ Member', '🔇 ━━ Muted', '🤖 ━━ Bot',
-];
 
 const CHANNELS: { cat: string; name: string; topic?: string }[] = [
   { cat: 'information', name: 'welcome', topic: '🏰 Welcome to HARVAL MC' },
@@ -134,24 +111,18 @@ export class ServerSetup {
       } catch (e: any) { logger.error(`  #${ch.name} FAIL: ${e.message}`); }
     }
 
-    // Roles — build list first
-    const roles: { name: string; color: number }[] = [];
-    for (const mode of MODES) {
-      for (const t of TIERS) roles.push({ name: `${mode} ${t.name}`, color: t.color });
-    }
-    for (const name of STAFF_ROLES) roles.push({ name, color: 0 });
-
-    // Create roles
+    // Roles — create from explicit flat list
     const start = Date.now();
     let done = 0;
-    for (let i = 0; i < roles.length; i++) {
-      if (Date.now() - start > 600000) { break; }
-      const r = roles[i];
+    try { await this.guild.roles.fetch(); } catch {}
+    for (let i = 0; i < ALL_ROLES.length; i++) {
+      if (Date.now() - start > 600000) break;
+      const r = ALL_ROLES[i];
       try {
         if (this.guild.roles.cache.some(x => x.name === r.name)) { done++; continue; }
         await this.guild.roles.create({ name: r.name, color: r.color });
         done++;
-        logger.info(`  [${done}/${roles.length}] ${r.name}`);
+        logger.info(`  [${done}/${ALL_ROLES.length}] ${r.name}`);
         await this.sleep(1000);
       } catch (e: any) {
         logger.error(`  FAIL ${r.name}: ${e.message || e}`);

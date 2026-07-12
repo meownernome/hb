@@ -186,7 +186,13 @@ export class HARVAL {
       if (!state) { await interaction.reply({ content: '❌ Ticket state expired.', ephemeral: true }); return; }
 
       if (state.claimedBy) {
-        await interaction.reply({ content: `❌ Already claimed by **${state.claimedByName}**.`, ephemeral: true });
+        await interaction.reply({ content: '❌ Already claimed by **${state.claimedByName}**.', ephemeral: true });
+        return;
+      }
+
+      // Prevent ticket creator from claiming their own ticket
+      if (state.playerId === interaction.user.id) {
+        await interaction.reply({ content: '❌ You cannot claim your own ticket.', ephemeral: true });
         return;
       }
 
