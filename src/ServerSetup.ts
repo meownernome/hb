@@ -148,30 +148,21 @@ export class ServerSetup {
   }
 
   private async createRole(name: string, color?: number): Promise<void> {
-    if (this.guild.roles.cache.some(r => r.name === name)) { logger.info(`  ⏭️ Role "${name}" exists, skipping`); return; }
-    for (let attempt = 0; attempt < 5; attempt++) {
-      try {
-        await this.guild.roles.create({ name, colors: { primaryColor: color || 0 } });
-        logger.info(`  🎨 Created role: ${name}`);
-        await this.sleep(1200);
-        return;
-      } catch (e: any) {
-        const errMsg = e?.message || e?.code || String(e);
-        if (e?.httpStatus === 429 || e?.status === 429 || String(errMsg).includes('rate limited')) {
-          const wait = e?.retry_after ? e.retry_after * 1000 : (attempt + 1) * 5000;
-          logger.warn(`  ⏳ Rate limited on "${name}", waiting ${(wait / 1000).toFixed(1)}s...`);
-          await this.sleep(wait);
-        } else if (e?.code === 50013 || String(errMsg).includes('Missing Permissions') || String(errMsg).includes('Missing Access')) {
-          logger.error(`  ❌ CANNOT CREATE ROLE "${name}" — Bot lacks Manage Roles permission!`);
-          logger.error(`  ❌ Bot's highest role was probably deleted by /cleanup. RE-INVITE the bot to fix this.`);
-          return;
-        } else {
-          logger.error(`  ❌ Failed "${name}": ${errMsg}`);
-          return;
-        }
+    if (this.guild.roles.cache.some(r => r.name === name)) { logger.info(`  ⏭️ ${name} exists`); return; }
+    try {
+      await this.guild.roles.create({ name });
+      logger.info(`  🎨 ${name}`);
+      await this.sleep(500);
+      return;
+    } catch (e2: any) {
+      const msg = e2?.message || e2?.code || String(e2);
+      if (e2?.code === 50013 || msg.includes('Missing Permissions') || msg.includes('Missing Access') || msg.includes('Forbidden')) {
+        logger.error(`  ❌ Bot CANNOT create roles — Manage Roles permission missing. Re-invite the bot.`);
+        throw new Error('NO_PERMISSION');
       }
+      logger.error(`  ❌ ${name}: ${msg}`);
+      await this.sleep(500);
     }
-    logger.error(`  ❌ Gave up on "${name}" after 5 attempts`);
   }
 
   private async handleRateLimit(e: any, context: string): Promise<void> {
@@ -301,33 +292,49 @@ export class ServerSetup {
 
       let roleCount = 0;
       const totalRoles = (TIER_MODES.length * 10) + STAFF_ROLES.length;
+      let permissionError = false;
 
-      for (let i = 0; i < TIER_MODES.length; i++) {
+      for (let i = 0; i < TIER_MODES.length && !permissionError; i++) {
         const mode = TIER_MODES[i];
+        logger.info(`  ── ${mode} ──`);
         for (const tier of TIERS) {
           const roleName = `${mode} ${tier.prefix} ${tier.level}`;
-          await this.createRole(roleName, tier.hex);
-          roleCount++;
+          try {
+            await this.createRole(roleName, tier.hex);
+            roleCount++;
+          } catch (e: any) {
+            if (e?.message === 'NO_PERMISSION') { permissionError = true; break; }
+          }
         }
-        if ((i + 1) % 5 === 0) {
-          logger.info(`  📊 Progress: ${roleCount}/${totalRoles} roles created (finished: ${mode})`);
+        if ((i + 1) % 5 === 0 && !permissionError) {
+          logger.info(`  📊 Progress: ${roleCount}/${totalRoles} roles (finished: ${mode})`);
           await this.sleep(3000);
         }
       }
 
       // ── PHASE 3b: Staff Roles ──
-      logger.info(`  ── Staff Roles ──`);
-      for (let i = 0; i < STAFF_ROLES.length; i++) {
-        const sr = STAFF_ROLES[i];
-        await this.createRole(sr.name, sr.color);
-        roleCount++;
-        if ((i + 1) % 5 === 0) {
-          logger.info(`  📊 Staff progress: ${i + 1}/${STAFF_ROLES.length} staff roles`);
-          await this.sleep(2000);
+      if (!permissionError) {
+        logger.info(`  ── Staff Roles ──`);
+        for (let i = 0; i < STAFF_ROLES.length; i++) {
+          const sr = STAFF_ROLES[i];
+          try {
+            await this.createRole(sr.name, sr.color);
+            roleCount++;
+          } catch (e: any) {
+            if (e?.message === 'NO_PERMISSION') { permissionError = true; break; }
+          }
+          if ((i + 1) % 5 === 0 && !permissionError) {
+            logger.info(`  📊 Staff roles: ${i + 1}/${STAFF_ROLES.length}`);
+            await this.sleep(2000);
+          }
         }
       }
 
-      logger.info(`✅ Phase 3 complete: ${roleCount} roles created`);
+      if (permissionError) {
+        logger.error(`[/all] ❌ STOPPED at Phase 3 — Bot cannot create roles.`);
+      } else {
+        logger.info(`✅ Phase 3 complete: ${roleCount} roles created`);
+      }
 
       // ── PHASE 4: Role Hierarchy ──
       logger.info(`\n📊 Phase 4/4: Setting role hierarchy permissions...`);
