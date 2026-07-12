@@ -150,10 +150,11 @@ export class ServerSetup {
   private async createRole(name: string, color?: number): Promise<void> {
     if (this.guild.roles.cache.some(r => r.name === name)) { logger.info(`  ⏭️ ${name} exists`); return; }
 
+    logger.info(`  ▶️ ${name}...`);
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 20000);
+        const timer = setTimeout(() => controller.abort(), 15000);
 
         const res = await fetch(`https://discord.com/api/v10/guilds/${this.guild.id}/roles`, {
           method: 'POST',
@@ -182,14 +183,14 @@ export class ServerSetup {
         }
 
         const roleData = await res.json();
-        (this.guild.roles as any)._add({ ...roleData, id: roleData.id, guild_id: this.guild.id });
-        logger.info(`  🎨 ${name}`);
-        await this.sleep(1200);
+        (this.guild.roles as any)._add({ ...roleData, guild_id: this.guild.id });
+        logger.info(`  ✅ ${name}`);
+        await this.sleep(1000);
         return;
       } catch (e: any) {
         if (e?.name === 'AbortError') {
-          logger.warn(`  ⏳ ${name} — Discord API timed out (20s)`);
-          return;
+          logger.warn(`  ⏳ ${name} — API timeout 15s, retry ${attempt + 1}/3`);
+          continue;
         }
         if (e?.message === 'NO_PERMISSION') throw e;
         logger.error(`  ❌ ${name}: ${e?.message || e}`);
@@ -327,8 +328,13 @@ export class ServerSetup {
       let roleCount = 0;
       const totalRoles = (TIER_MODES.length * 10) + STAFF_ROLES.length;
       let permissionError = false;
+      const phase3Start = Date.now();
 
       for (let i = 0; i < TIER_MODES.length && !permissionError; i++) {
+        if (Date.now() - phase3Start > 600000) {
+          logger.error(`  ❌ Phase 3 TIMEOUT after 10 minutes — aborting.`);
+          break;
+        }
         const mode = TIER_MODES[i];
         logger.info(`  ── ${mode} ──`);
         for (const tier of TIERS) {
