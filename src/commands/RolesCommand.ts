@@ -1,5 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder } from 'discord.js';
 
+const STAFF_ROLE_PATTERNS = /^(👑|⚡|🌐|🛡️|🔰|⚔️|💎|🔨|🎬)/;
+
 export class RolesCommand {
   public async execute(interaction: ChatInputCommandInteraction): Promise<void> {
     if (!interaction.memberPermissions?.has('ManageRoles')) {
@@ -16,26 +18,47 @@ export class RolesCommand {
       return;
     }
 
-    const staffRoles = roles.filter(r => /^(👑|⚡|🌐|🛡️|🔰|⚔️|💎|🔨|🎬)/.test(r.name));
-    const tierRoles = roles.filter(r => /T[1-5]$/.test(r.name));
-    const otherRoles = roles.filter(r => !/^(👑|⚡|🌐|🛡️|🔰|⚔️|💎|🔨|🎬)/.test(r.name) && !/T[1-5]$/.test(r.name));
+    const staffRoles = roles.filter(r => STAFF_ROLE_PATTERNS.test(r.name));
+    const ltRoles = roles.filter(r => / LT [1-5]$/.test(r.name));
+    const htRoles = roles.filter(r => / HT [1-5]$/.test(r.name));
+    const otherRoles = roles.filter(r => !STAFF_ROLE_PATTERNS.test(r.name) && !/ LT [1-5]$/.test(r.name) && !/ HT [1-5]$/.test(r.name));
 
     const embed = new EmbedBuilder()
-      .setTitle('🎨 Server Roles')
+      .setTitle('╔══════════════════════════════╗')
+      .setDescription('## 🎨 ━━ SERVER ROLES\n╚══════════════════════════════╝')
       .setColor(0x3498DB)
       .setTimestamp();
 
     if (staffRoles.size > 0) {
-      embed.addFields({ name: '🛡️ Staff Roles', value: staffRoles.map(r => `${r.name} (${r.members.size} members)`).join('\n'), inline: false });
+      embed.addFields({
+        name: '🛡️ Staff Roles',
+        value: staffRoles.map(r => `> ${r.name} ━━ ${r.members.size} members`).join('\n'),
+        inline: false,
+      });
     }
-    if (tierRoles.size > 0) {
-      embed.addFields({ name: '⚔️ Tier Roles', value: tierRoles.map(r => `${r.name} (${r.members.size} members)`).join('\n'), inline: false });
+    if (ltRoles.size > 0) {
+      embed.addFields({
+        name: '🟦 Low Tier (LT) Roles',
+        value: ltRoles.map(r => `> ${r.name} ━━ ${r.members.size} members`).join('\n'),
+        inline: false,
+      });
+    }
+    if (htRoles.size > 0) {
+      embed.addFields({
+        name: '🟪 High Tier (HT) Roles',
+        value: htRoles.map(r => `> ${r.name} ━━ ${r.members.size} members`).join('\n'),
+        inline: false,
+      });
     }
     if (otherRoles.size > 0) {
-      embed.addFields({ name: '📌 Other Roles', value: otherRoles.map(r => `${r.name} (${r.members.size} members)`).join('\n'), inline: false });
+      embed.addFields({
+        name: '📌 Other Roles',
+        value: otherRoles.map(r => `> ${r.name} ━━ ${r.members.size} members`).join('\n'),
+        inline: false,
+      });
     }
 
-    embed.setFooter({ text: `Total: ${roles.size} roles` });
+    embed.setFooter({ text: `╚════ Total: ${roles.size} roles ════╝` });
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
   }

@@ -1,7 +1,7 @@
 import {
   Client, GatewayIntentBits, Partials, Events,
   ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle,
-  EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, PermissionFlagsBits,
+  EmbedBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder,
 } from 'discord.js';
 import { CommandHandler } from './handlers/CommandHandler';
 import { ServerSetup } from './ServerSetup';
@@ -20,6 +20,14 @@ const MODE_EMOJI: Record<string, string> = {
   'Custom Duel': '🎯',
 };
 
+const TIERS = [
+  { level: 1, prefix: 'LT', hex: 0x95A5A6 },
+  { level: 2, prefix: 'LT', hex: 0x2ECC71 },
+  { level: 3, prefix: 'LT', hex: 0x3498DB },
+  { level: 4, prefix: 'HT', hex: 0x9B59B6 },
+  { level: 5, prefix: 'HT', hex: 0xF1C40F },
+];
+
 const TICKET_STATE = new Map<string, {
   mode: string;
   playerId: string;
@@ -27,6 +35,8 @@ const TICKET_STATE = new Map<string, {
   claimedBy?: string;
   claimedByName?: string;
 }>();
+
+const STAFF_ROLE_PATTERNS = /^(👑|⚡|🌐|🛡️|🔰|⚔️|💎|🔨|🎬)/;
 
 export class HARVAL {
   public readonly client: Client;
@@ -97,13 +107,23 @@ export class HARVAL {
   }
 
   // ═══════════════════════════════════════════
+  // HELPERS
+  // ═══════════════════════════════════════════
+
+  private isStaff(member: any): boolean {
+    return member?.roles?.cache?.some((r: any) => STAFF_ROLE_PATTERNS.test(r.name)) || false;
+  }
+
+  // ═══════════════════════════════════════════
   // BUTTON HANDLER
   // ═══════════════════════════════════════════
+
   private async handleButton(interaction: any): Promise<void> {
     const id = interaction.customId;
 
     // ── Verify → Show modal ──
     if (id === 'verify_start') {
+      logger.info(`[VERIFY] ${interaction.user.tag} opened verify modal`);
       const modal = new ModalBuilder()
         .setCustomId('verify_modal')
         .setTitle('Minecraft Verification');
@@ -125,6 +145,7 @@ export class HARVAL {
       const modeSlug = id.replace('tier_request_', '');
       const mode = modeSlug.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
       const emoji = MODE_EMOJI[mode] || '🎮';
+      logger.info(`[TICKET] ${interaction.user.tag} requested tier test: ${mode}`);
 
       await interaction.deferReply({ ephemeral: true });
 
@@ -146,7 +167,10 @@ export class HARVAL {
         playerDisplay: interaction.member.displayName || interaction.user.username,
       });
 
-      await interaction.editReply({ content: `✅ Ticket created! ${emoji} <#${ticketChannel.id}>` });
+      await interaction.editReply({
+        content: `✅ **Ticket Created!** ${emoji} Your ${mode} tier test ticket is ready: <#${ticketChannel.id}>\n\n> A tester will claim your ticket shortly. Please wait in the ticket channel.`
+      });
+      logger.info(`[TICKET] Created: ticket-${mode.toLowerCase().replace(/\s+/g, '-')}-${ticketChannel.id}`);
       return;
     }
 
@@ -157,7 +181,7 @@ export class HARVAL {
       if (!state) { await interaction.reply({ content: '❌ Ticket state expired.', ephemeral: true }); return; }
 
       if (state.claimedBy) {
-        await interaction.reply({ content: `❌ Already claimed by ${state.claimedByName}.`, ephemeral: true });
+        await interaction.reply({ content: `❌ Already claimed by **${state.claimedByName}**.`, ephemeral: true });
         return;
       }
 
@@ -165,35 +189,59 @@ export class HARVAL {
       state.claimedByName = interaction.member.displayName || interaction.user.username;
 
       const emoji = MODE_EMOJI[state.mode] || '🎮';
-      const embed = new EmbedBuilder()
-        .setTitle(`${emoji} ═══ TIER TEST TICKET ═══`)
+      logger.info(`[TICKET] ${state.claimedByName} claimed ticket for ${state.mode}`);
+
+      // Update player-facing embed
+      const playerEmbed = new EmbedBuilder()
+        .setTitle('╔══════════════════════════════╗')
         .setDescription(
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-          `**Player:** ${state.playerDisplay} (<@${state.playerId}>)\n` +
-          `**Mode:** ${emoji} ${state.mode}\n` +
-          `**Tester:** ⚔️ ${state.claimedByName} (<@${state.claimedBy}>)\n` +
-          `**Status:** 🟢 In Progress\n\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-          `**Next steps:**\n` +
+          `## ${emoji} ━━ TIER TEST TICKET\n` +
+          `### *${state.mode} — ${state.playerDisplay}*\n` +
+          '╚══════════════════════════════╝\n\n' +
+          `**╔══════════ TICKET INFO ══════════╗**\n` +
           '```\n' +
-          '  ▶️ Start    — Send IP & instructions\n' +
-          '  🏆 Give Tier — Assign tier result\n' +
-          '  ✅ Finish   — Close the ticket\n' +
-          '```\n\n' +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+          `  ┃  Player   ━━  ${state.playerDisplay}\n` +
+          `  ┃  Mode     ━━  ${emoji} ${state.mode}\n` +
+          `  ┃  Tester   ━━  ⚔️ ${state.claimedByName}\n` +
+          '  ┃  Status   ━━  🟢 In Progress\n' +
+          '```\n' +
+          '**╚═══════════════════════════════════╝**\n\n' +
+          `> **${state.claimedByName}** has claimed your ticket.\n` +
+          '> They will send instructions shortly. Please wait!'
         )
         .setColor(0x2ECC71)
-        .setFooter({ text: `Claimed by ${state.claimedByName}` })
+        .setFooter({ text: '╠════ TIER TEST TICKET ════╣' })
         .setTimestamp();
 
-      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+      await interaction.update({ embeds: [playerEmbed], components: [] });
+
+      // Send staff control panel as new message
+      const staffEmbed = new EmbedBuilder()
+        .setTitle('╔══════════════════════════════╗')
+        .setDescription(
+          '## ⚔️ ━━ STAFF CONTROL PANEL\n' +
+          `### *Claimed by ${state.claimedByName}*\n` +
+          '╚══════════════════════════════╝\n\n' +
+          '**╔══════════ ACTIONS ══════════╗**\n' +
+          '```\n' +
+          '  ┃  ▶️  Start    ━━  Send IP & instructions\n' +
+          '  ┃  🏆  Give Tier ━━  Assign tier result\n' +
+          '  ┃  ✅  Finish   ━━  Close the ticket\n' +
+          '```\n' +
+          '**╚═══════════════════════════════════╝**'
+        )
+        .setColor(0x3498DB)
+        .setFooter({ text: `╠════ STAFF PANEL ════╣ ┃ ${state.playerDisplay}` })
+        .setTimestamp();
+
+      const staffRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder().setCustomId(`ticket_claim_${channelId}`).setLabel('Claimed').setEmoji('✅').setStyle(ButtonStyle.Success).setDisabled(true),
         new ButtonBuilder().setCustomId(`ticket_start_${channelId}`).setLabel('Start').setEmoji('▶️').setStyle(ButtonStyle.Primary),
         new ButtonBuilder().setCustomId(`ticket_givetier_${channelId}`).setLabel('Give Tier').setEmoji('🏆').setStyle(ButtonStyle.Secondary),
         new ButtonBuilder().setCustomId(`ticket_finish_${channelId}`).setLabel('Finish').setEmoji('✅').setStyle(ButtonStyle.Danger),
       );
 
-      await interaction.update({ embeds: [embed], components: [row] });
+      await interaction.followUp({ embeds: [staffEmbed], components: [staffRow] });
 
       await interaction.followUp({
         content: `⚔️ **${state.claimedByName}** has claimed this ticket. <@${state.playerId}> please wait while the tester prepares.`,
@@ -207,34 +255,44 @@ export class HARVAL {
       const state = TICKET_STATE.get(channelId);
       if (!state) return;
 
+      if (!this.isStaff(interaction.member)) {
+        await interaction.reply({ content: '❌ Only staff can use this.', ephemeral: true });
+        return;
+      }
+
       const emoji = MODE_EMOJI[state.mode] || '🎮';
+      logger.info(`[TICKET] ${interaction.user.tag} started ticket for ${state.mode}`);
+
       const embed = new EmbedBuilder()
-        .setTitle(`${emoji} ═══ TIER TEST START ═══`)
+        .setTitle('╔══════════════════════════════╗')
         .setDescription(
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+          `## ${emoji} ━━ TIER TEST STARTING\n` +
+          `### *${state.mode} — ${state.playerDisplay}*\n` +
+          '╚══════════════════════════════╝\n\n' +
           `<@${state.playerId}> your **${state.mode}** tier test is starting!\n\n` +
-          '**━━━━━━ INSTRUCTIONS ━━━━━━**\n' +
+          '**╔══════════ INSTRUCTIONS ══════════╗**\n' +
           '```\n' +
-          '  🖥️ Server IP :  play.harvalmc.fun\n' +
-          `  ⚔️ Mode      :  ${state.mode}\n` +
-          '  📋 Rules     :  Fight fairly, no cheats\n' +
-          '  ⏱️ Time      :  Until a winner is clear\n' +
-          '```\n\n' +
-          '**━━━━━━ HOW TO JOIN ━━━━━━**\n' +
+          '  ┃  🖥️  Server IP  ━━  play.harvalmc.fun\n' +
+          `  ┃  ⚔️  Mode       ━━  ${state.mode}\n` +
+          '  ┃  📋  Rules      ━━  Fight fairly, no cheats\n' +
+          '  ┃  ⏱️  Time       ━━  Until a winner is clear\n' +
           '```\n' +
-          '  1. Open Minecraft\n' +
-          '  2. Add server: play.harvalmc.fun\n' +
-          '  3. Join and wait in the lobby\n' +
-          '  4. The tester will invite you\n' +
-          '```\n\n' +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+          '**╚═══════════════════════════════════╝**\n\n' +
+          '**╔══════════ HOW TO JOIN ══════════╗**\n' +
+          '```\n' +
+          '  ┃  1 ┃  Open Minecraft\n' +
+          '  ┃  2 ┃  Add server: play.harvalmc.fun\n' +
+          '  ┃  3 ┃  Join and wait in the lobby\n' +
+          '  ┃  4 ┃  The tester will invite you\n' +
+          '```\n' +
+          '**╚═══════════════════════════════════╝**'
         )
         .setColor(0x3498DB)
-        .setFooter({ text: 'Started by ' + (state.claimedByName || 'Tester') })
+        .setFooter({ text: `╠════ TIER TEST ════╣ ┃ Started by ${state.claimedByName || 'Tester'}` })
         .setTimestamp();
 
       await interaction.channel.send({ embeds: [embed] });
-      await interaction.reply({ content: '✅ Instructions sent.', ephemeral: true });
+      await interaction.reply({ content: '✅ Instructions sent to the player.', ephemeral: true });
       return;
     }
 
@@ -244,13 +302,17 @@ export class HARVAL {
       const state = TICKET_STATE.get(channelId);
       if (!state) return;
 
-      const options = [1, 2, 3, 4, 5].map(level => {
-        const stars = level >= 4 ? '★'.repeat(level - 2) + ' ' : '';
+      if (!this.isStaff(interaction.member)) {
+        await interaction.reply({ content: '❌ Only staff can use this.', ephemeral: true });
+        return;
+      }
+
+      const options = TIERS.map(tier => {
         return {
-          label: `${stars}${state.mode} T${level}`,
-          value: `${state.mode.replace(/\s+/g, '_')}_T${level}`,
+          label: `${state.mode} ${tier.prefix} ${tier.level}`,
+          value: `${state.mode.replace(/\s+/g, '_')}_${tier.prefix}_${tier.level}`,
           emoji: MODE_EMOJI[state.mode] || '🎮',
-          description: `Tier ${level} — ${'⬛🟩🟦🟪🟨'[level - 1]}`,
+          description: `${tier.prefix} ${tier.level} — ${tier.prefix === 'LT' ? 'Low Tier' : 'High Tier'}`,
         };
       });
 
@@ -271,20 +333,32 @@ export class HARVAL {
       const state = TICKET_STATE.get(channelId);
       if (!state) return;
 
+      if (!this.isStaff(interaction.member)) {
+        await interaction.reply({ content: '❌ Only staff can use this.', ephemeral: true });
+        return;
+      }
+
       const emoji = MODE_EMOJI[state.mode] || '🎮';
+      logger.info(`[TICKET] ${interaction.user.tag} finished ticket for ${state.mode}`);
+
       const embed = new EmbedBuilder()
-        .setTitle(`${emoji} ═══ TICKET CLOSED ═══`)
+        .setTitle('╔══════════════════════════════╗')
         .setDescription(
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-          `**Player:** ${state.playerDisplay}\n` +
-          `**Mode:** ${emoji} ${state.mode}\n` +
-          `**Tester:** ${state.claimedByName || 'N/A'}\n` +
-          `**Status:** ✅ Completed\n\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-          `*This ticket will be deleted in 10 seconds.*\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+          `## ✅ ━━ TICKET CLOSED\n` +
+          `### *${state.mode} — ${state.playerDisplay}*\n` +
+          '╚══════════════════════════════╝\n\n' +
+          `**╔══════════ SUMMARY ══════════╗**\n` +
+          '```\n' +
+          `  ┃  Player  ━━  ${state.playerDisplay}\n` +
+          `  ┃  Mode    ━━  ${emoji} ${state.mode}\n` +
+          `  ┃  Tester  ━━  ${state.claimedByName || 'N/A'}\n` +
+          '  ┃  Status  ━━  ✅ Completed\n' +
+          '```\n' +
+          '**╚═══════════════════════════════════╝**\n\n' +
+          '> *This ticket will be deleted in 10 seconds.*'
         )
         .setColor(0x2ECC71)
+        .setFooter({ text: '╠════ TICKET CLOSED ════╣' })
         .setTimestamp();
 
       await interaction.update({ embeds: [embed], components: [] });
@@ -300,43 +374,62 @@ export class HARVAL {
   // ═══════════════════════════════════════════
   // SELECT MENU HANDLER (tier selection)
   // ═══════════════════════════════════════════
+
   private async handleSelectMenu(interaction: any): Promise<void> {
     if (interaction.customId.startsWith('tier_select_')) {
       const channelId = interaction.customId.replace('tier_select_', '');
       const state = TICKET_STATE.get(channelId);
       if (!state) return;
 
+      if (!this.isStaff(interaction.member)) {
+        await interaction.reply({ content: '❌ Only staff can assign tiers.', ephemeral: true });
+        return;
+      }
+
       const selected = interaction.values[0];
-      const tierParts = selected.split('_T');
-      const tierLevel = tierParts[tierParts.length - 1];
+      const parts = selected.split('_');
+      const tierPrefix = parts[parts.length - 2]; // LT or HT
+      const tierLevel = parts[parts.length - 1];   // 1-5
       const modeName = state.mode;
-      const stars = parseInt(tierLevel) >= 4 ? '★'.repeat(parseInt(tierLevel) - 2) + ' ' : '';
-      const fullTier = `${stars}${modeName} T${tierLevel}`;
+      const fullTier = `${modeName} ${tierPrefix} ${tierLevel}`;
       const emoji = MODE_EMOJI[modeName] || '🎮';
+      const tierColor = tierPrefix === 'LT' ? (parseInt(tierLevel) <= 1 ? 0x95A5A6 : parseInt(tierLevel) <= 2 ? 0x2ECC71 : 0x3498DB) : (parseInt(tierLevel) <= 4 ? 0x9B59B6 : 0xF1C40F);
+
+      logger.info(`[TIER] ${interaction.user.tag} assigned ${fullTier} to ${state.playerDisplay}`);
 
       const embed = new EmbedBuilder()
-        .setTitle(`${emoji} ═══ TIER ASSIGNED ═══`)
+        .setTitle('╔══════════════════════════════╗')
         .setDescription(
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
-          `<@${state.playerId}> has been assigned:\n\n` +
-          `# ${emoji} ${fullTier}\n\n` +
-          `━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+          `## ${emoji} ━━ TIER ASSIGNED\n` +
+          `### *${state.playerDisplay}*\n` +
+          '╚══════════════════════════════╝\n\n' +
+          `**╔══════════ RESULT ══════════╗**\n` +
+          '```\n' +
+          `  ┃  Player  ━━  ${state.playerDisplay}\n` +
+          `  ┃  Mode    ━━  ${emoji} ${modeName}\n` +
+          `  ┃  Tier    ━━  ${fullTier}\n` +
+          `  ┃  Rank    ━━  ${tierPrefix === 'LT' ? 'Low Tier' : 'High Tier'}\n` +
+          '```\n' +
+          '**╚═══════════════════════════════════╝**\n\n' +
+          `> <@${state.playerId}> has been assigned **${fullTier}**.`
         )
-        .setColor(0xF1C40F)
-        .setFooter({ text: `Given by ${interaction.member.displayName}` })
+        .setColor(tierColor)
+        .setFooter({ text: `╠════ TIER ASSIGNED ════╣ ┃ Given by ${interaction.member.displayName}` })
         .setTimestamp();
 
       await interaction.channel.send({ embeds: [embed] });
       await interaction.reply({ content: `✅ Tier **${fullTier}** assigned to ${state.playerDisplay}.`, ephemeral: true });
 
       // Try to assign role
-      const roleName = fullTier;
-      const role = interaction.guild?.roles?.cache?.find((r: any) => r.name === roleName);
+      const role = interaction.guild?.roles?.cache?.find((r: any) => r.name === fullTier);
       if (role) {
         const member = interaction.guild?.members?.cache?.get(state.playerId);
         if (member) {
           await member.roles.add(role).catch(() => {});
+          logger.info(`[TIER] Role "${fullTier}" assigned to ${state.playerDisplay}`);
         }
+      } else {
+        logger.warn(`[TIER] Role "${fullTier}" not found — cannot assign to player`);
       }
     }
   }
@@ -344,15 +437,21 @@ export class HARVAL {
   // ═══════════════════════════════════════════
   // MODAL HANDLER (verify)
   // ═══════════════════════════════════════════
+
   private async handleModal(interaction: any): Promise<void> {
     if (interaction.customId === 'verify_modal') {
       const username = interaction.fields.getTextInputValue('minecraft_username');
+      logger.info(`[VERIFY] ${interaction.user.tag} verified as "${username}"`);
       try {
         await interaction.member.setNickname(username);
-        const verifiedRole = interaction.guild?.roles?.cache?.find((r: any) => r.name === '✅ Verified' || r.name === 'Verified');
+        const verifiedRole = interaction.guild?.roles?.cache?.find((r: any) => r.name.includes('Verified'));
         if (verifiedRole) await interaction.member.roles.add(verifiedRole);
         await interaction.reply({
-          content: `✅ **Verification Complete!**\n\nMinecraft Username: **${username}**\nNickname updated and ✅ Verified role assigned.`,
+          content: `✅ **Verification Complete!**\n\n` +
+            `**Minecraft Username:** \`${username}\`\n` +
+            `**Nickname:** Updated\n` +
+            `**Role:** ${verifiedRole ? verifiedRole.name : '✅ Verified'}\n\n` +
+            `> You can now request tier tests in #request-tier-test`,
           ephemeral: true,
         });
       } catch (error) {
