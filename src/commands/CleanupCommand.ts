@@ -11,7 +11,7 @@ export class CleanupCommand {
     await interaction.deferReply();
 
     const serverSetup = new ServerSetup(interaction.client, interaction.guild);
-    const result = await serverSetup.cleanup(interaction.guild);
+    const result = await serverSetup.cleanup();
 
     try {
       await interaction.editReply({

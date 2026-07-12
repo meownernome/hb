@@ -63,7 +63,7 @@ export class RolesCommand {
 
     embed.setFooter({ text: `╚════ Total: ${roles.size} roles ════╝` });
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed] as any, ephemeral: true });
   }
 
   public get command() {
