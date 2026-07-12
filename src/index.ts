@@ -21,10 +21,15 @@ const MODE_EMOJI: Record<string, string> = {
 };
 
 const TIERS = [
-  { level: 1, prefix: 'LT', hex: 0x95A5A6 },
-  { level: 2, prefix: 'LT', hex: 0x2ECC71 },
-  { level: 3, prefix: 'LT', hex: 0x3498DB },
+  { level: 1, prefix: 'LT', hex: 0x7F8C8D },
+  { level: 1, prefix: 'HT', hex: 0x95A5A6 },
+  { level: 2, prefix: 'LT', hex: 0x27AE60 },
+  { level: 2, prefix: 'HT', hex: 0x2ECC71 },
+  { level: 3, prefix: 'LT', hex: 0x2980B9 },
+  { level: 3, prefix: 'HT', hex: 0x3498DB },
+  { level: 4, prefix: 'LT', hex: 0x8E44AD },
   { level: 4, prefix: 'HT', hex: 0x9B59B6 },
+  { level: 5, prefix: 'LT', hex: 0xD4AC0D },
   { level: 5, prefix: 'HT', hex: 0xF1C40F },
 ];
 
@@ -388,12 +393,13 @@ export class HARVAL {
 
       const selected = interaction.values[0];
       const parts = selected.split('_');
-      const tierPrefix = parts[parts.length - 2]; // LT or HT
-      const tierLevel = parts[parts.length - 1];   // 1-5
+      const tierPrefix = parts[parts.length - 2];
+      const tierLevel = parts[parts.length - 1];
       const modeName = state.mode;
       const fullTier = `${modeName} ${tierPrefix} ${tierLevel}`;
       const emoji = MODE_EMOJI[modeName] || '🎮';
-      const tierColor = tierPrefix === 'LT' ? (parseInt(tierLevel) <= 1 ? 0x95A5A6 : parseInt(tierLevel) <= 2 ? 0x2ECC71 : 0x3498DB) : (parseInt(tierLevel) <= 4 ? 0x9B59B6 : 0xF1C40F);
+      const matchedTier = TIERS.find(t => t.prefix === tierPrefix && t.level === parseInt(tierLevel));
+      const tierColor = matchedTier ? matchedTier.hex : 0xF1C40F;
 
       logger.info(`[TIER] ${interaction.user.tag} assigned ${fullTier} to ${state.playerDisplay}`);
 

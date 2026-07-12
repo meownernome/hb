@@ -37,10 +37,15 @@ const MODE_EMOJI: Record<string, string> = {
 };
 
 const TIERS = [
-  { level: 1, prefix: 'LT', hex: 0x95A5A6 },
-  { level: 2, prefix: 'LT', hex: 0x2ECC71 },
-  { level: 3, prefix: 'LT', hex: 0x3498DB },
+  { level: 1, prefix: 'LT', hex: 0x7F8C8D },
+  { level: 1, prefix: 'HT', hex: 0x95A5A6 },
+  { level: 2, prefix: 'LT', hex: 0x27AE60 },
+  { level: 2, prefix: 'HT', hex: 0x2ECC71 },
+  { level: 3, prefix: 'LT', hex: 0x2980B9 },
+  { level: 3, prefix: 'HT', hex: 0x3498DB },
+  { level: 4, prefix: 'LT', hex: 0x8E44AD },
   { level: 4, prefix: 'HT', hex: 0x9B59B6 },
+  { level: 5, prefix: 'LT', hex: 0xD4AC0D },
   { level: 5, prefix: 'HT', hex: 0xF1C40F },
 ];
 
@@ -278,7 +283,7 @@ export class ServerSetup {
     // ── PHASE 3: Tier Roles (LT/HT) ──
     logger.info(`\n🎨 Phase 3/4: Creating tier roles (LT/HT system)...`);
     let roleCount = 0;
-    const totalRoles = (TIER_MODES.length * 5) + STAFF_ROLES.length;
+    const totalRoles = (TIER_MODES.length * 10) + STAFF_ROLES.length;
 
     for (let i = 0; i < TIER_MODES.length; i++) {
       const mode = TIER_MODES[i];
@@ -533,15 +538,20 @@ export class ServerSetup {
         '  ┃  5 ┃  Tester assigns your tier result\n' +
         '```\n' +
         '**╚═══════════════════════════════════╝**\n\n' +
-        '**╔══════════ TIER SYSTEM ══════════╗**\n' +
-        '```\n' +
-        '  ┃  🟤  LT 1  ━━  Lowest Tier\n' +
-        '  ┃  🟩  LT 2  ━━  Low-Mid Tier\n' +
-        '  ┃  🟦  LT 3  ━━  Mid Tier\n' +
-        '  ┃  🟪  HT 4  ━━  High Tier\n' +
-        '  ┃  🟨  HT 5  ━━  Highest Tier\n' +
-        '```\n' +
-        '**╚═══════════════════════════════════╝**\n\n' +
+          '**╔══════════ TIER SYSTEM ══════════╗**\n' +
+          '```\n' +
+          '  ┃  🟤  LT 1  ━━  Low-Tier 1\n' +
+          '  ┃  🟩  HT 1  ━━  High-Tier 1\n' +
+          '  ┃  🟢  LT 2  ━━  Low-Tier 2\n' +
+          '  ┃  🟦  HT 2  ━━  High-Tier 2\n' +
+          '  ┃  🔵  LT 3  ━━  Low-Tier 3\n' +
+          '  ┃  🟣  HT 3  ━━  High-Tier 3\n' +
+          '  ┃  🟤  LT 4  ━━  Low-Tier 4\n' +
+          '  ┃  🟡  HT 4  ━━  High-Tier 4\n' +
+          '  ┃  ⭐  LT 5  ━━  Low-Tier 5\n' +
+          '  ┃  👑  HT 5  ━━  High-Tier 5 (Highest)\n' +
+          '```\n' +
+          '**╚═══════════════════════════════════╝**\n\n' +
         '> **Select your mode from the buttons below:**'
       )
       .setColor(0xF1C40F)

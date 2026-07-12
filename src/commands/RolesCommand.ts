@@ -14,7 +14,10 @@ export class RolesCommand {
       .sort((a, b) => b.position - a.position);
 
     if (!roles || roles.size === 0) {
-      await interaction.reply({ content: 'No roles found.', ephemeral: true });
+      await interaction.reply({
+        content: '❌ No roles found in this server.\n\n> Use **`/all`** to create the full role structure.\n> Or check if `/cleanup` deleted everything.',
+        ephemeral: true,
+      });
       return;
     }
 
