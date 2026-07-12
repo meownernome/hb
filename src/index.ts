@@ -21,16 +21,16 @@ const MODE_EMOJI: Record<string, string> = {
 };
 
 const TIERS = [
-  { level: 1, prefix: 'LT', hex: 0x7F8C8D },
-  { level: 1, prefix: 'HT', hex: 0x95A5A6 },
-  { level: 2, prefix: 'LT', hex: 0x27AE60 },
-  { level: 2, prefix: 'HT', hex: 0x2ECC71 },
-  { level: 3, prefix: 'LT', hex: 0x2980B9 },
-  { level: 3, prefix: 'HT', hex: 0x3498DB },
-  { level: 4, prefix: 'LT', hex: 0x8E44AD },
-  { level: 4, prefix: 'HT', hex: 0x9B59B6 },
-  { level: 5, prefix: 'LT', hex: 0xD4AC0D },
-  { level: 5, prefix: 'HT', hex: 0xF1C40F },
+  { level: 1, prefix: 'LT', hex: 0x7F8C8D, rank: 1 },
+  { level: 2, prefix: 'LT', hex: 0x95A5A6, rank: 2 },
+  { level: 3, prefix: 'LT', hex: 0x27AE60, rank: 3 },
+  { level: 4, prefix: 'LT', hex: 0x2ECC71, rank: 4 },
+  { level: 5, prefix: 'LT', hex: 0x3498DB, rank: 5 },
+  { level: 5, prefix: 'HT', hex: 0x8E44AD, rank: 6 },
+  { level: 4, prefix: 'HT', hex: 0x9B59B6, rank: 7 },
+  { level: 3, prefix: 'HT', hex: 0xD4AC0D, rank: 8 },
+  { level: 2, prefix: 'HT', hex: 0xF1C40F, rank: 9 },
+  { level: 1, prefix: 'HT', hex: 0xFFD700, rank: 10 },
 ];
 
 const TICKET_STATE = new Map<string, {
@@ -313,11 +313,12 @@ export class HARVAL {
       }
 
       const options = TIERS.map(tier => {
+        const rankLabel = tier.prefix === 'LT' ? `LT ${tier.level}` : `HT ${tier.level}`;
         return {
-          label: `${state.mode} ${tier.prefix} ${tier.level}`,
+          label: `${state.mode} ${rankLabel}`,
           value: `${state.mode.replace(/\s+/g, '_')}_${tier.prefix}_${tier.level}`,
           emoji: MODE_EMOJI[state.mode] || '🎮',
-          description: `${tier.prefix} ${tier.level} — ${tier.prefix === 'LT' ? 'Low Tier' : 'High Tier'}`,
+          description: `Rank ${tier.rank}/10 — ${tier.prefix === 'LT' ? '⬆️ Climbing' : '🏆 Elite'}`,
         };
       });
 
@@ -400,6 +401,8 @@ export class HARVAL {
       const emoji = MODE_EMOJI[modeName] || '🎮';
       const matchedTier = TIERS.find(t => t.prefix === tierPrefix && t.level === parseInt(tierLevel));
       const tierColor = matchedTier ? matchedTier.hex : 0xF1C40F;
+      const rankStr = matchedTier ? `Rank ${matchedTier.rank}/10` : '';
+      const tierType = tierPrefix === 'LT' ? 'Low Tier' : 'High Tier';
 
       logger.info(`[TIER] ${interaction.user.tag} assigned ${fullTier} to ${state.playerDisplay}`);
 
@@ -414,10 +417,11 @@ export class HARVAL {
           `  ┃  Player  ━━  ${state.playerDisplay}\n` +
           `  ┃  Mode    ━━  ${emoji} ${modeName}\n` +
           `  ┃  Tier    ━━  ${fullTier}\n` +
-          `  ┃  Rank    ━━  ${tierPrefix === 'LT' ? 'Low Tier' : 'High Tier'}\n` +
+          `  ┃  Type    ━━  ${tierType}\n` +
+          `  ┃  Rank    ━━  ${rankStr}\n` +
           '```\n' +
           '**╚═══════════════════════════════════╝**\n\n' +
-          `> <@${state.playerId}> has been assigned **${fullTier}**.`
+          `> <@${state.playerId}> has been assigned **${fullTier}**!`
         )
         .setColor(tierColor)
         .setFooter({ text: `╠════ TIER ASSIGNED ════╣ ┃ Given by ${interaction.member.displayName}` })

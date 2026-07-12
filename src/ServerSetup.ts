@@ -37,16 +37,16 @@ const MODE_EMOJI: Record<string, string> = {
 };
 
 const TIERS = [
-  { level: 1, prefix: 'LT', hex: 0x7F8C8D },
-  { level: 1, prefix: 'HT', hex: 0x95A5A6 },
-  { level: 2, prefix: 'LT', hex: 0x27AE60 },
-  { level: 2, prefix: 'HT', hex: 0x2ECC71 },
-  { level: 3, prefix: 'LT', hex: 0x2980B9 },
-  { level: 3, prefix: 'HT', hex: 0x3498DB },
-  { level: 4, prefix: 'LT', hex: 0x8E44AD },
-  { level: 4, prefix: 'HT', hex: 0x9B59B6 },
-  { level: 5, prefix: 'LT', hex: 0xD4AC0D },
-  { level: 5, prefix: 'HT', hex: 0xF1C40F },
+  { level: 1, prefix: 'LT', hex: 0x7F8C8D, rank: 1 },
+  { level: 2, prefix: 'LT', hex: 0x95A5A6, rank: 2 },
+  { level: 3, prefix: 'LT', hex: 0x27AE60, rank: 3 },
+  { level: 4, prefix: 'LT', hex: 0x2ECC71, rank: 4 },
+  { level: 5, prefix: 'LT', hex: 0x3498DB, rank: 5 },
+  { level: 5, prefix: 'HT', hex: 0x8E44AD, rank: 6 },
+  { level: 4, prefix: 'HT', hex: 0x9B59B6, rank: 7 },
+  { level: 3, prefix: 'HT', hex: 0xD4AC0D, rank: 8 },
+  { level: 2, prefix: 'HT', hex: 0xF1C40F, rank: 9 },
+  { level: 1, prefix: 'HT', hex: 0xFFD700, rank: 10 },
 ];
 
 const STAFF_ROLES = [
@@ -151,7 +151,7 @@ export class ServerSetup {
     if (this.guild.roles.cache.some(r => r.name === name)) { logger.info(`  ⏭️ Role "${name}" exists, skipping`); return; }
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        await this.guild.roles.create({ name, colors: { primaryColor: color || 0 } });
+        await this.guild.roles.create({ name, color: color || 0 });
         logger.info(`  🎨 Created role: ${name}`);
         await this.sleep(1200);
         return;
@@ -201,138 +201,144 @@ export class ServerSetup {
     logger.info(`[/all] Starting full setup for ${this.guild.name}`);
     logger.info(`═══════════════════════════════════════════════`);
 
-    // ── PHASE 1: Categories ──
-    logger.info(`\n📂 Phase 1/4: Creating categories...`);
-    for (const name of CATEGORIES) {
-      await this.createCategory(name);
-    }
-    logger.info(`✅ Phase 1 complete: ${CATEGORIES.length} categories`);
+    try {
+      // ── PHASE 1: Categories ──
+      logger.info(`\n📂 Phase 1/4: Creating categories...`);
+      for (const name of CATEGORIES) {
+        await this.createCategory(name);
+      }
+      logger.info(`✅ Phase 1 complete: ${CATEGORIES.length} categories`);
 
-    // ── PHASE 2: Channels ──
-    logger.info(`\n📢 Phase 2/4: Creating channels...`);
+      // ── PHASE 2: Channels ──
+      logger.info(`\n📢 Phase 2/4: Creating channels...`);
 
-    // Information
-    logger.info(`  ── Information ──`);
-    await this.createChannel('information', 'welcome', ChannelType.GuildText, '🏰 Welcome to HARVAL MC — The Ultimate PvP Network');
-    await this.createChannel('information', 'rules', ChannelType.GuildText, '📜 Server rules — Read before chatting');
-    await this.createChannel('information', 'faq', ChannelType.GuildText, '❓ Frequently asked questions');
-    await this.createChannel('information', 'server-ip', ChannelType.GuildText, '🖥️ Server IP ━━ play.harvalmc.fun');
-    await this.createChannel('information', 'announcements', ChannelType.GuildText, '📢 Official announcements & news');
-    await this.createChannel('information', 'updates', ChannelType.GuildText, '🔔 Patch notes & server updates');
-    await this.createChannel('information', 'verify', ChannelType.GuildText, '✅ Click the button to verify your Minecraft account');
-    await this.createChannel('information', 'how-tier-testing-works', ChannelType.GuildText, '📖 Guide: How the tier system works');
-    await this.createChannel('information', 'staff', ChannelType.GuildText, '👥 Meet the HARVAL MC staff team');
-    await this.createChannel('information', 'roles', ChannelType.GuildText, '🎨 Self-assign your roles here');
+      // Information
+      logger.info(`  ── Information ──`);
+      await this.createChannel('information', 'welcome', ChannelType.GuildText, '🏰 Welcome to HARVAL MC — The Ultimate PvP Network');
+      await this.createChannel('information', 'rules', ChannelType.GuildText, '📜 Server rules — Read before chatting');
+      await this.createChannel('information', 'faq', ChannelType.GuildText, '❓ Frequently asked questions');
+      await this.createChannel('information', 'server-ip', ChannelType.GuildText, '🖥️ Server IP ━━ play.harvalmc.fun');
+      await this.createChannel('information', 'announcements', ChannelType.GuildText, '📢 Official announcements & news');
+      await this.createChannel('information', 'updates', ChannelType.GuildText, '🔔 Patch notes & server updates');
+      await this.createChannel('information', 'verify', ChannelType.GuildText, '✅ Click the button to verify your Minecraft account');
+      await this.createChannel('information', 'how-tier-testing-works', ChannelType.GuildText, '📖 Guide: How the tier system works');
+      await this.createChannel('information', 'staff', ChannelType.GuildText, '👥 Meet the HARVAL MC staff team');
+      await this.createChannel('information', 'roles', ChannelType.GuildText, '🎨 Self-assign your roles here');
 
-    // Community
-    logger.info(`  ── Community ──`);
-    await this.createChannel('community', 'general', ChannelType.GuildText, '💬 General discussion — Be respectful');
-    await this.createChannel('community', 'minecraft-chat', ChannelType.GuildText, '⛏️ Minecraft discussion & server talk');
-    await this.createChannel('community', 'clips', ChannelType.GuildText, '🎬 Share your best PvP clips');
-    await this.createChannel('community', 'screenshots', ChannelType.GuildText, '📸 Share screenshots & builds');
-    await this.createChannel('community', 'media', ChannelType.GuildText, '🎥 YouTube/Twitch content & montages');
-    await this.createChannel('community', 'polls', ChannelType.GuildText, '📊 Community polls & votes');
-    await this.createChannel('community', 'suggestions', ChannelType.GuildText, '💡 Suggest improvements for the server');
-    await this.createChannel('community', 'off-topic', ChannelType.GuildText, '🎲 Off-topic chat & fun');
+      // Community
+      logger.info(`  ── Community ──`);
+      await this.createChannel('community', 'general', ChannelType.GuildText, '💬 General discussion — Be respectful');
+      await this.createChannel('community', 'minecraft-chat', ChannelType.GuildText, '⛏️ Minecraft discussion & server talk');
+      await this.createChannel('community', 'clips', ChannelType.GuildText, '🎬 Share your best PvP clips');
+      await this.createChannel('community', 'screenshots', ChannelType.GuildText, '📸 Share screenshots & builds');
+      await this.createChannel('community', 'media', ChannelType.GuildText, '🎥 YouTube/Twitch content & montages');
+      await this.createChannel('community', 'polls', ChannelType.GuildText, '📊 Community polls & votes');
+      await this.createChannel('community', 'suggestions', ChannelType.GuildText, '💡 Suggest improvements for the server');
+      await this.createChannel('community', 'off-topic', ChannelType.GuildText, '🎲 Off-topic chat & fun');
 
-    // Support
-    logger.info(`  ── Support ──`);
-    await this.createChannel('support', 'create-ticket', ChannelType.GuildText, '🎫 Click below to open a support ticket');
-    await this.createChannel('support', 'bug-report', ChannelType.GuildText, '🐛 Found a bug? Report it here');
-    await this.createChannel('support', 'report-player', ChannelType.GuildText, '🚨 Report rule-breaking players');
-    await this.createChannel('support', 'appeal', ChannelType.GuildText, '📩 Appeal a ban or mute');
-    await this.createChannel('support', 'questions', ChannelType.GuildText, '❓ Ask questions — Staff will help');
+      // Support
+      logger.info(`  ── Support ──`);
+      await this.createChannel('support', 'create-ticket', ChannelType.GuildText, '🎫 Click below to open a support ticket');
+      await this.createChannel('support', 'bug-report', ChannelType.GuildText, '🐛 Found a bug? Report it here');
+      await this.createChannel('support', 'report-player', ChannelType.GuildText, '🚨 Report rule-breaking players');
+      await this.createChannel('support', 'appeal', ChannelType.GuildText, '📩 Appeal a ban or mute');
+      await this.createChannel('support', 'questions', ChannelType.GuildText, '❓ Ask questions — Staff will help');
 
-    // Tier Testing
-    logger.info(`  ── Tier Testing ──`);
-    await this.createChannel('tier-testing', 'request-tier-test', ChannelType.GuildText, '⚔️ Click a mode button below to start your tier test');
-    await this.createChannel('tier-testing', 'queue', ChannelType.GuildText, '⏳ Current test queue — Check your position');
-    await this.createChannel('tier-testing', 'tier-results', ChannelType.GuildText, '🏆 Published tier results for all modes');
-    await this.createChannel('tier-testing', 'leaderboards', ChannelType.GuildText, '📊 Global leaderboards — Updated in real-time');
-    await this.createChannel('tier-testing', 'tier-information', ChannelType.GuildText, '📖 LT & HT tier system explained');
-    await this.createChannel('tier-testing', 'retest-request', ChannelType.GuildText, '🔄 Request a retest if you improved');
+      // Tier Testing
+      logger.info(`  ── Tier Testing ──`);
+      await this.createChannel('tier-testing', 'request-tier-test', ChannelType.GuildText, '⚔️ Click a mode button below to start your tier test');
+      await this.createChannel('tier-testing', 'queue', ChannelType.GuildText, '⏳ Current test queue — Check your position');
+      await this.createChannel('tier-testing', 'tier-results', ChannelType.GuildText, '🏆 Published tier results for all modes');
+      await this.createChannel('tier-testing', 'leaderboards', ChannelType.GuildText, '📊 Global leaderboards — Updated in real-time');
+      await this.createChannel('tier-testing', 'tier-information', ChannelType.GuildText, '📖 LT & HT tier system explained');
+      await this.createChannel('tier-testing', 'retest-request', ChannelType.GuildText, '🔄 Request a retest if you improved');
 
-    // Staff
-    logger.info(`  ── Staff ──`);
-    await this.createChannel('staff', 'staff-chat', ChannelType.GuildText, '🔒 Staff-only discussion');
-    await this.createChannel('staff', 'commands', ChannelType.GuildText, '⌨️ Bot commands for staff use');
-    await this.createChannel('staff', 'claims', ChannelType.GuildText, '📌 Claim pending tier tests');
-    await this.createChannel('staff', 'applications', ChannelType.GuildText, '📝 Staff application reviews');
-    await this.createChannel('staff', 'reports', ChannelType.GuildText, '📋 Player reports for staff review');
-    await this.createChannel('staff', 'moderation', ChannelType.GuildText, '🔨 Moderation actions & logs');
+      // Staff
+      logger.info(`  ── Staff ──`);
+      await this.createChannel('staff', 'staff-chat', ChannelType.GuildText, '🔒 Staff-only discussion');
+      await this.createChannel('staff', 'commands', ChannelType.GuildText, '⌨️ Bot commands for staff use');
+      await this.createChannel('staff', 'claims', ChannelType.GuildText, '📌 Claim pending tier tests');
+      await this.createChannel('staff', 'applications', ChannelType.GuildText, '📝 Staff application reviews');
+      await this.createChannel('staff', 'reports', ChannelType.GuildText, '📋 Player reports for staff review');
+      await this.createChannel('staff', 'moderation', ChannelType.GuildText, '🔨 Moderation actions & logs');
 
-    // Logs
-    logger.info(`  ── Logs ──`);
-    await this.createChannel('logs', 'ticket-logs', ChannelType.GuildText, '🎫 Ticket activity logs');
-    await this.createChannel('logs', 'tier-logs', ChannelType.GuildText, '⚔️ Tier assignment logs');
-    await this.createChannel('logs', 'bot-logs', ChannelType.GuildText, '🤖 Bot event logs');
-    await this.createChannel('logs', 'error-logs', ChannelType.GuildText, '❌ Error & crash logs');
-    await this.createChannel('logs', 'join-leave', ChannelType.GuildText, '👋 Member join & leave events');
-    await this.createChannel('logs', 'role-logs', ChannelType.GuildText, '🎨 Role change logs');
-    await this.createChannel('logs', 'verification-logs', ChannelType.GuildText, '✅ Verification attempt logs');
-    await this.createChannel('logs', 'command-logs', ChannelType.GuildText, '⌨️ Slash command usage logs');
+      // Logs
+      logger.info(`  ── Logs ──`);
+      await this.createChannel('logs', 'ticket-logs', ChannelType.GuildText, '🎫 Ticket activity logs');
+      await this.createChannel('logs', 'tier-logs', ChannelType.GuildText, '⚔️ Tier assignment logs');
+      await this.createChannel('logs', 'bot-logs', ChannelType.GuildText, '🤖 Bot event logs');
+      await this.createChannel('logs', 'error-logs', ChannelType.GuildText, '❌ Error & crash logs');
+      await this.createChannel('logs', 'join-leave', ChannelType.GuildText, '👋 Member join & leave events');
+      await this.createChannel('logs', 'role-logs', ChannelType.GuildText, '🎨 Role change logs');
+      await this.createChannel('logs', 'verification-logs', ChannelType.GuildText, '✅ Verification attempt logs');
+      await this.createChannel('logs', 'command-logs', ChannelType.GuildText, '⌨️ Slash command usage logs');
 
-    // Voice
-    logger.info(`  ── Voice ──`);
-    for (const v of ['/general-1', '/general-2', '/afk', '/staff-vc', '/meeting-room']) {
-      await this.createChannel('voice', v.slice(1), ChannelType.GuildVoice);
-    }
+      // Voice
+      logger.info(`  ── Voice ──`);
+      for (const v of ['/general-1', '/general-2', '/afk', '/staff-vc', '/meeting-room']) {
+        await this.createChannel('voice', v.slice(1), ChannelType.GuildVoice);
+      }
 
-    logger.info(`✅ Phase 2 complete: All channels created`);
+      logger.info(`✅ Phase 2 complete: All channels created`);
 
-    // ── PHASE 3: Tier Roles (LT/HT) ──
-    logger.info(`\n🎨 Phase 3/4: Creating tier roles (LT/HT system)...`);
-    let roleCount = 0;
-    const totalRoles = (TIER_MODES.length * 10) + STAFF_ROLES.length;
+      // ── PHASE 3: Tier Roles (LT/HT) ──
+      logger.info(`\n🎨 Phase 3/4: Creating tier roles (LT/HT system)...`);
+      let roleCount = 0;
+      const totalRoles = (TIER_MODES.length * 10) + STAFF_ROLES.length;
 
-    for (let i = 0; i < TIER_MODES.length; i++) {
-      const mode = TIER_MODES[i];
-      for (const tier of TIERS) {
-        const roleName = `${mode} ${tier.prefix} ${tier.level}`;
-        await this.createRole(roleName, tier.hex);
+      for (let i = 0; i < TIER_MODES.length; i++) {
+        const mode = TIER_MODES[i];
+        for (const tier of TIERS) {
+          const roleName = `${mode} ${tier.prefix} ${tier.level}`;
+          await this.createRole(roleName, tier.hex);
+          roleCount++;
+        }
+        if ((i + 1) % 5 === 0) {
+          logger.info(`  📊 Progress: ${roleCount}/${totalRoles} roles created (finished: ${mode})`);
+          await this.sleep(3000);
+        }
+      }
+
+      // ── PHASE 3b: Staff Roles ──
+      logger.info(`  ── Staff Roles ──`);
+      for (let i = 0; i < STAFF_ROLES.length; i++) {
+        const sr = STAFF_ROLES[i];
+        await this.createRole(sr.name, sr.color);
         roleCount++;
+        if ((i + 1) % 5 === 0) {
+          logger.info(`  📊 Staff progress: ${i + 1}/${STAFF_ROLES.length} staff roles`);
+          await this.sleep(2000);
+        }
       }
-      if ((i + 1) % 5 === 0) {
-        logger.info(`  📊 Progress: ${roleCount}/${totalRoles} roles created (finished: ${mode})`);
-        await this.sleep(3000);
+
+      logger.info(`✅ Phase 3 complete: ${roleCount} roles created`);
+
+      // ── PHASE 4: Role Hierarchy ──
+      logger.info(`\n📊 Phase 4/4: Setting role hierarchy permissions...`);
+      const rolesToEdit = this.guild.roles.cache
+        .filter(r => r.name !== '@everyone' && r.editable)
+        .sort((a, b) => b.position - a.position)
+        .values();
+      let edited = 0;
+      for (const r of rolesToEdit) {
+        await r.setPermissions(PermissionsBitField.Flags.UseApplicationCommands).catch(() => {});
+        edited++;
+        if (edited % 10 === 0) {
+          await this.sleep(1000);
+        }
       }
+      logger.info(`✅ Phase 4 complete: ${edited} roles hierarchy set`);
+
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      logger.info(`\n═══════════════════════════════════════════════`);
+      logger.info(`[/all] ✅ COMPLETE for ${this.guild.name}`);
+      logger.info(`[/all] ⏱️ Time: ${elapsed}s | 📢 Channels: ~50 | 🎨 Roles: ${roleCount}`);
+      logger.info(`═══════════════════════════════════════════════`);
+    } catch (error: any) {
+      logger.error(`[/all] CRASHED during setup: ${error?.message || error}`);
+      logger.error(`[/all] Stack: ${error?.stack || 'N/A'}`);
+      throw error;
     }
-
-    // ── PHASE 3b: Staff Roles ──
-    logger.info(`  ── Staff Roles ──`);
-    for (let i = 0; i < STAFF_ROLES.length; i++) {
-      const sr = STAFF_ROLES[i];
-      await this.createRole(sr.name, sr.color);
-      roleCount++;
-      if ((i + 1) % 5 === 0) {
-        logger.info(`  📊 Staff progress: ${i + 1}/${STAFF_ROLES.length} staff roles`);
-        await this.sleep(2000);
-      }
-    }
-
-    logger.info(`✅ Phase 3 complete: ${roleCount} roles created`);
-
-    // ── PHASE 4: Role Hierarchy ──
-    logger.info(`\n📊 Phase 4/4: Setting role hierarchy permissions...`);
-    const rolesToEdit = this.guild.roles.cache
-      .filter(r => r.name !== '@everyone' && r.editable)
-      .sort((a, b) => b.position - a.position)
-      .values();
-    let edited = 0;
-    for (const r of rolesToEdit) {
-      await r.setPermissions(PermissionsBitField.Flags.UseApplicationCommands).catch(() => {});
-      edited++;
-      if (edited % 10 === 0) {
-        await this.sleep(1000);
-      }
-    }
-    logger.info(`✅ Phase 4 complete: ${edited} roles hierarchy set`);
-
-    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    logger.info(`\n═══════════════════════════════════════════════`);
-    logger.info(`[/all] ✅ COMPLETE for ${this.guild.name}`);
-    logger.info(`[/all] ⏱️ Time: ${elapsed}s | 📢 Channels: ~50 | 🎨 Roles: ${roleCount}`);
-    logger.info(`═══════════════════════════════════════════════`);
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -433,7 +439,7 @@ export class ServerSetup {
       ['🔄 How to Retest?', 'Go to #retest-request → Follow the instructions there'],
       ['📩 How to Appeal?', 'Go to #appeal → Submit your appeal with details'],
       ['🖥️ Server IP?', '`play.harvalmc.fun` — Add it in Minecraft and join!'],
-      ['📊 Tier System?', '**LT (Low Tier)** = LT 1, LT 2, LT 3\n**HT (High Tier)** = HT 4, HT 5\nEach mode has 5 tiers.'],
+      ['📊 Tier System?', '**10 tiers per mode!**\n⬆️ **LT (Low Tier):** LT 1 → LT 5 (climbing up)\n🏆 **HT (High Tier):** HT 5 → HT 1 (elite ranks)\n**HT 1** = Top Tier (best) 👑\n**LT 1** = Starting Tier 🟤'],
     ];
     const e = new EmbedBuilder()
       .setTitle('╔══════════════════════════════╗')
@@ -540,16 +546,16 @@ export class ServerSetup {
         '**╚═══════════════════════════════════╝**\n\n' +
           '**╔══════════ TIER SYSTEM ══════════╗**\n' +
           '```\n' +
-          '  ┃  🟤  LT 1  ━━  Low-Tier 1\n' +
-          '  ┃  🟩  HT 1  ━━  High-Tier 1\n' +
-          '  ┃  🟢  LT 2  ━━  Low-Tier 2\n' +
-          '  ┃  🟦  HT 2  ━━  High-Tier 2\n' +
-          '  ┃  🔵  LT 3  ━━  Low-Tier 3\n' +
-          '  ┃  🟣  HT 3  ━━  High-Tier 3\n' +
-          '  ┃  🟤  LT 4  ━━  Low-Tier 4\n' +
-          '  ┃  🟡  HT 4  ━━  High-Tier 4\n' +
-          '  ┃  ⭐  LT 5  ━━  Low-Tier 5\n' +
-          '  ┃  👑  HT 5  ━━  High-Tier 5 (Highest)\n' +
+          '  ┃  🟤  LT 1  ━━  Low-Tier 1 (Start)\n' +
+          '  ┃  ⬜  LT 2  ━━  Low-Tier 2\n' +
+          '  ┃  🟢  LT 3  ━━  Low-Tier 3\n' +
+          '  ┃  🟩  LT 4  ━━  Low-Tier 4\n' +
+          '  ┃  🔵  LT 5  ━━  Low-Tier 5 (Best LT)\n' +
+          '  ┃  🟣  HT 5  ━━  High-Tier 5\n' +
+          '  ┃  🟪  HT 4  ━━  High-Tier 4\n' +
+          '  ┃  🟡  HT 3  ━━  High-Tier 3\n' +
+          '  ┃  ⭐  HT 2  ━━  High-Tier 2\n' +
+          '  ┃  👑  HT 1  ━━  High-Tier 1 (TOP TIER!)\n' +
           '```\n' +
           '**╚═══════════════════════════════════╝**\n\n' +
         '> **Select your mode from the buttons below:**'
