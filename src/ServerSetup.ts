@@ -112,12 +112,15 @@ export class ServerSetup {
         await new Promise(r => setTimeout(r, 1000));
         return;
       } catch (e: any) {
-        if (e?.code === 50013 || e?.httpStatus === 429) {
-          const wait = e?.retry_after ? e.retry_after * 1000 : (attempt + 1) * 3000;
+        if (e?.httpStatus === 429 || e?.code === 'RATE_LIMITED') {
+          const wait = e?.retry_after ? e.retry_after * 1000 : (attempt + 1) * 5000;
           logger.warn(`Rate limited creating role ${name}, waiting ${wait}ms (attempt ${attempt + 1}/5)`);
           await new Promise(r => setTimeout(r, wait));
+        } else if (e?.code === 50013) {
+          logger.error(`MISSING PERMISSIONS to create role ${name} — bot role may have been deleted. Re-invite the bot or run /all again.`);
+          return;
         } else {
-          logger.error(`Create role ${name}: ${e}`);
+          logger.error(`Create role ${name}: ${e?.message || e}`);
           return;
         }
       }
@@ -455,6 +458,7 @@ export class ServerSetup {
 
     for (const r of [...g.roles.cache.values()]) {
       if (r.name === '@everyone') continue;
+      if (r.managed) continue;
       await r.delete().catch(() => {}); rl++;
     }
 
