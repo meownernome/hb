@@ -108,7 +108,7 @@ export class ServerSetup {
     if (this.guild.roles.cache.some(r => r.name === name)) return;
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        await this.guild.roles.create({ name, color: color || 0 });
+        await this.guild.roles.create({ name, colors: { primaryColor: color || 0 } });
         await new Promise(r => setTimeout(r, 1000));
         return;
       } catch (e: any) {

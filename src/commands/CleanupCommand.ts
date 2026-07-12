@@ -13,9 +13,11 @@ export class CleanupCommand {
     const serverSetup = new ServerSetup(interaction.client, interaction.guild);
     const result = await serverSetup.cleanup(interaction.guild);
 
-    await interaction.editReply({
-      content: `✅ Cleanup complete!\n\n🗑️ Deleted **${result.channels}** channels\n🗑️ Deleted **${result.roles}** roles\n\nAll channels and roles have been removed.`
-    });
+    try {
+      await interaction.editReply({
+        content: `✅ Cleanup complete!\n\n🗑️ Deleted **${result.channels}** channels\n🗑️ Deleted **${result.roles}** roles\n\nAll channels and roles have been removed.`
+      });
+    } catch { /* interaction may be gone after deleting everything */ }
   }
 
   public get command() {
