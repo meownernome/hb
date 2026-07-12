@@ -151,23 +151,27 @@ export class ServerSetup {
     if (this.guild.roles.cache.some(r => r.name === name)) { logger.info(`  ⏭️ Role "${name}" exists, skipping`); return; }
     for (let attempt = 0; attempt < 5; attempt++) {
       try {
-        await this.guild.roles.create({ name, color: color || 0 });
+        await this.guild.roles.create({ name, colors: { primaryColor: color || 0 } });
         logger.info(`  🎨 Created role: ${name}`);
         await this.sleep(1200);
         return;
       } catch (e: any) {
-        if (e?.httpStatus === 429) {
-          await this.handleRateLimit(e, `role "${name}"`);
-        } else if (e?.code === 50013) {
-          logger.error(`  ❌ MISSING PERMISSIONS for role "${name}" — bot needs ManageRoles. Re-invite the bot.`);
+        const errMsg = e?.message || e?.code || String(e);
+        if (e?.httpStatus === 429 || e?.status === 429 || String(errMsg).includes('rate limited')) {
+          const wait = e?.retry_after ? e.retry_after * 1000 : (attempt + 1) * 5000;
+          logger.warn(`  ⏳ Rate limited on "${name}", waiting ${(wait / 1000).toFixed(1)}s...`);
+          await this.sleep(wait);
+        } else if (e?.code === 50013 || String(errMsg).includes('Missing Permissions') || String(errMsg).includes('Missing Access')) {
+          logger.error(`  ❌ CANNOT CREATE ROLE "${name}" — Bot lacks Manage Roles permission!`);
+          logger.error(`  ❌ Bot's highest role was probably deleted by /cleanup. RE-INVITE the bot to fix this.`);
           return;
         } else {
-          logger.error(`  ❌ Failed to create role "${name}": ${e?.message || e}`);
+          logger.error(`  ❌ Failed "${name}": ${errMsg}`);
           return;
         }
       }
     }
-    logger.error(`  ❌ Gave up creating role "${name}" after 5 attempts`);
+    logger.error(`  ❌ Gave up on "${name}" after 5 attempts`);
   }
 
   private async handleRateLimit(e: any, context: string): Promise<void> {
@@ -283,6 +287,18 @@ export class ServerSetup {
 
       // ── PHASE 3: Tier Roles (LT/HT) ──
       logger.info(`\n🎨 Phase 3/4: Creating tier roles (LT/HT system)...`);
+
+      // Check if bot can create roles
+      const botMember = this.guild.members.me;
+      const botRoles = botMember?.roles?.cache;
+      const botHighestRole = botRoles?.filter(r => r.name !== '@everyone')?.sort((a, b) => b.position - a.position)?.first();
+      if (!botHighestRole) {
+        logger.warn(`  ⚠️ Bot has NO roles (highest position = @everyone). Role creation might fail!`);
+        logger.warn(`  ⚠️ If /cleanup deleted the bot's role, RE-INVITE the bot to fix this.`);
+      } else {
+        logger.info(`  🤖 Bot's highest role: "${botHighestRole.name}" (position ${botHighestRole.position})`);
+      }
+
       let roleCount = 0;
       const totalRoles = (TIER_MODES.length * 10) + STAFF_ROLES.length;
 
