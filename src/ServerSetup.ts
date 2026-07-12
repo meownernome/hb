@@ -86,13 +86,43 @@ export class ServerSetup {
     if (cat.children.cache.some(c => c.name === name)) return;
     const data: any = { name, type, parent: cat };
     if (type === ChannelType.GuildText && topic) data.topic = topic;
-    await cat.children.create(data).catch(e => logger.error(`Create #${name}: ${e}`));
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        await cat.children.create(data);
+        await new Promise(r => setTimeout(r, 500));
+        return;
+      } catch (e: any) {
+        if (e?.httpStatus === 429) {
+          const wait = e?.retry_after ? e.retry_after * 1000 : (attempt + 1) * 3000;
+          logger.warn(`Rate limited creating #${name}, waiting ${wait}ms`);
+          await new Promise(r => setTimeout(r, wait));
+        } else {
+          logger.error(`Create #${name}: ${e}`);
+          return;
+        }
+      }
+    }
   }
 
   private async role(name: string, color?: number): Promise<void> {
     if (this.guild.roles.cache.some(r => r.name === name)) return;
-    await this.guild.roles.create({ name, color: color || 0 }).catch(e => logger.error(`Create role ${name}: ${e}`));
-    await new Promise(r => setTimeout(r, 200));
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        await this.guild.roles.create({ name, color: color || 0 });
+        await new Promise(r => setTimeout(r, 1000));
+        return;
+      } catch (e: any) {
+        if (e?.code === 50013 || e?.httpStatus === 429) {
+          const wait = e?.retry_after ? e.retry_after * 1000 : (attempt + 1) * 3000;
+          logger.warn(`Rate limited creating role ${name}, waiting ${wait}ms (attempt ${attempt + 1}/5)`);
+          await new Promise(r => setTimeout(r, wait));
+        } else {
+          logger.error(`Create role ${name}: ${e}`);
+          return;
+        }
+      }
+    }
+    logger.error(`Failed to create role ${name} after 5 attempts`);
   }
 
   // ═══════════════════════════════════════════════════════
@@ -168,20 +198,43 @@ export class ServerSetup {
     }
 
     // ── Roles ──
-    for (const mode of TIER_MODES) {
+    let roleCount = 0;
+    for (let i = 0; i < TIER_MODES.length; i++) {
+      const mode = TIER_MODES[i];
       for (const level of [1, 2, 3, 4, 5]) {
         const stars = level >= 4 ? '★'.repeat(level - 2) + ' ' : '';
         await this.role(`${stars}${mode} T${level}`, TIER_HEX[level]);
+        roleCount++;
+      }
+      // Batch pause every 5 modes
+      if ((i + 1) % 5 === 0) {
+        logger.info(`[ALL] Roles: ${roleCount}/${(TIER_MODES.length * 5) + STAFF_ROLES.length} created (${mode})`);
+        await new Promise(r => setTimeout(r, 3000));
       }
     }
-    for (const sr of STAFF_ROLES) {
+    for (let i = 0; i < STAFF_ROLES.length; i++) {
+      const sr = STAFF_ROLES[i];
       await this.role(sr.name, sr.color);
+      roleCount++;
+      if ((i + 1) % 5 === 0) {
+        logger.info(`[ALL] Staff roles: ${i + 1}/${STAFF_ROLES.length}`);
+        await new Promise(r => setTimeout(r, 2000));
+      }
     }
 
     // Role hierarchy
-    for (const r of this.guild.roles.cache.filter(r => r.name !== '@everyone' && r.editable).sort((a, b) => b.position - a.position).values()) {
+    const rolesToEdit = this.guild.roles.cache
+      .filter(r => r.name !== '@everyone' && r.editable)
+      .sort((a, b) => b.position - a.position)
+      .values();
+    let edited = 0;
+    for (const r of rolesToEdit) {
       await r.setPermissions(PermissionsBitField.Flags.UseApplicationCommands).catch(() => {});
+      edited++;
+      if (edited % 10 === 0) await new Promise(r => setTimeout(r, 1000));
     }
+
+    logger.info(`[ALL] Total roles created: ${roleCount}`);
 
     logger.info(`[ALL] Done for ${this.guild.name}`);
   }
